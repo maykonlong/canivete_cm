@@ -1405,14 +1405,32 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show/hide extra panels based on conversion type
         convertType.addEventListener('change', () => {
             const v = convertType.value;
-            passPanel.style.display = (v === 'remove_key_pass' || v === 'pem_to_pfx') ? 'block' : 'none';
-            extraPanel.style.display = v === 'pem_to_pfx' ? 'block' : 'none';
+            const needsPass = ['remove_key_pass', 'pem_to_pfx', 'pfx_to_pem', 'generate_csr', 'cert_to_selfsigned', 'generate_rsa_key'].includes(v);
+            const needsExtra = ['pem_to_pfx'].includes(v);
+            passPanel.style.display = needsPass ? 'block' : 'none';
+            extraPanel.style.display = needsExtra ? 'block' : 'none';
             if (v === 'pem_to_pfx') {
                 passPanel.querySelector('h3').textContent = 'Senha para o PFX';
                 passPanel.querySelector('input').placeholder = 'Senha para proteger o PFX';
             } else if (v === 'remove_key_pass') {
                 passPanel.querySelector('h3').textContent = 'Senha da Chave Privada';
                 passPanel.querySelector('input').placeholder = 'Digite a senha da chave';
+            } else if (v === 'pfx_to_pem') {
+                passPanel.querySelector('h3').textContent = 'Senha do PFX';
+                passPanel.querySelector('input').placeholder = 'Senha do arquivo PFX';
+            } else if (v === 'generate_rsa_key') {
+                passPanel.querySelector('h3').textContent = 'Tamanho da Chave (bits)';
+                passPanel.querySelector('input').placeholder = '2048 ou 4096 (padrão: 2048)';
+                passPanel.querySelector('input').type = 'number';
+            } else if (v === 'generate_csr') {
+                passPanel.querySelector('h3').textContent = 'Common Name (CN) do CSR';
+                passPanel.querySelector('input').placeholder = 'ex: meusite.com.br';
+            } else if (v === 'cert_to_selfsigned') {
+                passPanel.querySelector('h3').textContent = 'Dias de Validade do Cert';
+                passPanel.querySelector('input').placeholder = '365 (padrão)';
+                passPanel.querySelector('input').type = 'number';
+            } else {
+                passPanel.querySelector('input').type = 'password'; // reset
             }
         });
 
@@ -1530,6 +1548,304 @@ document.addEventListener('DOMContentLoaded', () => {
                         const blob = new Blob([arr], { type: 'application/x-pkcs12' });
                         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'certificado.pfx'; a.click(); URL.revokeObjectURL(a.href);
                         showMessage('certs_msg', 'PFX gerado e download iniciado!');
+                        break;
+                    }
+                    // ===== New conversions: Full text, JSON, Fingerprints, SANs, URLs, JWK, CSR, Key Gen, Self-signed, Chain, Days =====
+                    case 'cert_to_fulltext': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const c = forge.pki.certificateFromPem(input);
+                        const exts = c.extensions || [];
+                        let txt = `Certificate:\n`;
+                        txt += `  Data:\n`;
+                        txt += `    Version: ${(c.version + 1)} (0x${c.version.toString(16)})\n`;
+                        txt += `    Serial Number: ${c.serialNumber}\n`;
+                        txt += `  Signature Algorithm: ${c.siginfo.algorithmOid || 'N/A'}\n`;
+                        txt += `  Issuer: ${c.issuer.attributes.map(a => `${a.shortName || a.name}=${a.value}`).join(', ')}\n`;
+                        txt += `  Validity:\n`;
+                        txt += `    Not Before: ${c.validity.notBefore.toLocaleString('pt-BR')}\n`;
+                        txt += `    Not After:  ${c.validity.notAfter.toLocaleString('pt-BR')}\n`;
+                        txt += `  Subject: ${c.subject.attributes.map(a => `${a.shortName || a.name}=${a.value}`).join(', ')}\n`;
+                        txt += `  Subject Public Key Info:\n`;
+                        txt += `    Public Key Algorithm: rsaEncryption\n`;
+                        txt += `    Public-Key: (${(c.publicKey.n.bitLength())} bit)\n`;
+                        txt += `    Modulus:\n      ${c.publicKey.n.toString(16).match(/.{1,64}/g)?.join('\n      ')}\n`;
+                        txt += `    Exponent: ${c.publicKey.e.toString()} (0x${c.publicKey.e.toString(16)})\n\n`;
+                        txt += `  Extensions (${exts.length}):\n`;
+                        exts.forEach(ext => {
+                            txt += `    ${ext.name || ext.oid}: ${ext.value || JSON.stringify(ext)}\n`;
+                        });
+                        const derBytes2 = forge.asn1.toDer(forge.pki.certificateToAsn1(c)).getBytes();
+                        txt += `\n  Fingerprint SHA-256: ${forge.md.sha256.create().update(derBytes2).digest().toHex()}\n`;
+                        txt += `  Fingerprint SHA-1:   ${forge.md.sha1.create().update(derBytes2).digest().toHex()}\n`;
+                        txt += `  Fingerprint MD5:     ${forge.md.md5.create().update(derBytes2).digest().toHex()}\n`;
+                        output.value = txt;
+                        showMessage('certs_msg', 'Texto completo extraído!');
+                        break;
+                    }
+                    case 'cert_to_json': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const cj = forge.pki.certificateFromPem(input);
+                        const derBytes3 = forge.asn1.toDer(forge.pki.certificateToAsn1(cj)).getBytes();
+                        const sanExt = cj.getExtension('subjectAltName');
+                        const jsonData = {
+                            version: cj.version + 1,
+                            serialNumber: cj.serialNumber,
+                            issuer: Object.fromEntries(cj.issuer.attributes.map(a => [a.shortName || a.name, a.value])),
+                            subject: Object.fromEntries(cj.subject.attributes.map(a => [a.shortName || a.name, a.value])),
+                            validity: {
+                                notBefore: cj.validity.notBefore.toISOString(),
+                                notAfter: cj.validity.notAfter.toISOString(),
+                                daysRemaining: Math.ceil((cj.validity.notAfter - new Date()) / 86400000)
+                            },
+                            publicKey: {
+                                algorithm: 'RSA',
+                                bits: cj.publicKey.n.bitLength(),
+                                exponent: cj.publicKey.e.toString()
+                            },
+                            fingerprints: {
+                                sha256: forge.md.sha256.create().update(derBytes3).digest().toHex(),
+                                sha1: forge.md.sha1.create().update(derBytes3).digest().toHex(),
+                                md5: forge.md.md5.create().update(derBytes3).digest().toHex()
+                            },
+                            san: sanExt?.altNames?.map(n => n.value || n.ip) || []
+                        };
+                        output.value = JSON.stringify(jsonData, null, 2);
+                        showMessage('certs_msg', 'JSON gerado!');
+                        break;
+                    }
+                    case 'cert_fingerprint_sha1': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const cs1 = forge.pki.certificateFromPem(input);
+                        const d1 = forge.asn1.toDer(forge.pki.certificateToAsn1(cs1)).getBytes();
+                        output.value = `SHA-1 Fingerprint:\n${forge.md.sha1.create().update(d1).digest().toHex()}`;
+                        showMessage('certs_msg', 'SHA-1 gerado!');
+                        break;
+                    }
+                    case 'cert_fingerprint_sha256': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const cs2 = forge.pki.certificateFromPem(input);
+                        const d2 = forge.asn1.toDer(forge.pki.certificateToAsn1(cs2)).getBytes();
+                        output.value = `SHA-256 Fingerprint:\n${forge.md.sha256.create().update(d2).digest().toHex()}`;
+                        showMessage('certs_msg', 'SHA-256 gerado!');
+                        break;
+                    }
+                    case 'cert_fingerprint_md5': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const cm = forge.pki.certificateFromPem(input);
+                        const dm = forge.asn1.toDer(forge.pki.certificateToAsn1(cm)).getBytes();
+                        output.value = `MD5 Fingerprint:\n${forge.md.md5.create().update(dm).digest().toHex()}`;
+                        showMessage('certs_msg', 'MD5 gerado!');
+                        break;
+                    }
+                    case 'extract_sans': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const cSan = forge.pki.certificateFromPem(input);
+                        const sanExt = cSan.getExtension('subjectAltName');
+                        if (!sanExt || !sanExt.altNames?.length) {
+                            output.value = 'Nenhum SAN encontrado neste certificado.';
+                        } else {
+                            let txt = 'Subject Alt Names (SAN):\n\n';
+                            sanExt.altNames.forEach((n, i) => {
+                                const label = n.type === 2 ? 'DNS' : n.type === 7 ? 'IP' : n.type === 6 ? 'URI' : n.type === 1 ? 'Email' : `Type ${n.type}`;
+                                txt += `  ${i + 1}. ${label}: ${n.value || n.ip}\n`;
+                            });
+                            output.value = txt;
+                        }
+                        showMessage('certs_msg', 'SANs extraídos!');
+                        break;
+                    }
+                    case 'extract_urls': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const cUrl = forge.pki.certificateFromPem(input);
+                        let urls = 'URLs do Certificado:\n\n';
+                        // CRL Distribution Points
+                        const crl = cUrl.getExtension('cRLDistributionPoints');
+                        if (crl) {
+                            urls += '── CRL Distribution Points ──\n';
+                            const points = Array.isArray(crl) ? crl : [crl];
+                            points.forEach(p => { if (p.value) urls += `  ${p.value}\n`; });
+                            urls += '\n';
+                        }
+                        // Authority Info Access (OCSP, CA Issuers)
+                        const aia = cUrl.getExtension('authorityInfoAccess');
+                        if (aia) {
+                            urls += '── Authority Info Access (AIA) ──\n';
+                            const accs = Array.isArray(aia) ? aia : [aia];
+                            accs.forEach(a => { if (a.value) urls += `  ${a.value}\n`; });
+                            urls += '\n';
+                        }
+                        // Subject Alt Names
+                        const sanExt = cUrl.getExtension('subjectAltName');
+                        if (sanExt?.altNames?.length) {
+                            urls += '── Subject Alt Names (SAN) ──\n';
+                            sanExt.altNames.forEach(n => { urls += `  ${n.value || n.ip}\n`; });
+                        }
+                        if (urls === 'URLs do Certificado:\n\n') urls += 'Nenhuma URL encontrada.';
+                        output.value = urls;
+                        showMessage('certs_msg', 'URLs extraídas!');
+                        break;
+                    }
+                    case 'key_to_jwk': {
+                        if (!input.includes('PRIVATE KEY') && !input.includes('PUBLIC KEY')) return showMessage('certs_msg', 'Cole uma chave PEM (privada ou pública)', 'error');
+                        let jwk;
+                        if (input.includes('PRIVATE KEY') && !input.includes('PUBLIC KEY')) {
+                            const k = forge.pki.privateKeyFromPem(input);
+                            const n = forge.util.encode64(forge.util.binary.raw.encode(forge.util.hexToBytes(k.n.toString(16))));
+                            const e = forge.util.encode64(forge.util.binary.raw.encode(forge.util.hexToBytes(k.e.toString(16))));
+                            const d = forge.util.encode64(forge.util.binary.raw.encode(forge.util.hexToBytes(k.d.toString(16))));
+                            jwk = { kty: 'RSA', n, e, d, p: '', q: '', dp: '', dq: '', qi: '' };
+                            try { jwk.p = forge.util.encode64(forge.util.binary.raw.encode(forge.util.hexToBytes(k.p.toString(16)))); } catch(_) {}
+                            try { jwk.q = forge.util.encode64(forge.util.binary.raw.encode(forge.util.hexToBytes(k.q.toString(16)))); } catch(_) {}
+                        } else {
+                            const cert = forge.pki.certificateFromPem(input);
+                            const k = cert.publicKey;
+                            const n = forge.util.encode64(forge.util.binary.raw.encode(forge.util.hexToBytes(k.n.toString(16))));
+                            const e = forge.util.encode64(forge.util.binary.raw.encode(forge.util.hexToBytes(k.e.toString(16))));
+                            jwk = { kty: 'RSA', n, e };
+                        }
+                        output.value = JSON.stringify(jwk, null, 2);
+                        showMessage('certs_msg', 'JWK gerado!');
+                        break;
+                    }
+                    case 'jwk_to_pem': {
+                        let jwk;
+                        try { jwk = JSON.parse(input); } catch (_) { return showMessage('certs_msg', 'Cole um JSON JWK válido', 'error'); }
+                        if (jwk.kty !== 'RSA') return showMessage('certs_msg', 'Apenas chaves RSA são suportadas', 'error');
+                        const nBytes = forge.util.binary.raw.decode(forge.util.decode64(jwk.n));
+                        const eBytes = forge.util.binary.raw.decode(forge.util.decode64(jwk.e));
+                        const nHex = forge.util.bytesToHex(nBytes);
+                        const eHex = forge.util.bytesToHex(eBytes);
+                        if (jwk.d) {
+                            // Private key
+                            const dBytes = forge.util.binary.raw.decode(forge.util.decode64(jwk.d));
+                            const pBytes = jwk.p ? forge.util.binary.raw.decode(forge.util.decode64(jwk.p)) : null;
+                            const qBytes = jwk.q ? forge.util.binary.raw.decode(forge.util.decode64(jwk.q)) : null;
+                            const privKey = forge.pki.setRsaPublicKey(
+                                new forge.jsbn.BigInteger(nHex, 16),
+                                new forge.jsbn.BigInteger(eHex, 16)
+                            );
+                            // This won't work directly for private keys; use a workaround
+                            output.value = 'Nota: JWK → Private Key PEM requer campos completos (n, e, d, p, q, dp, dq, qi).\n\nPublic Key components:\n' + forge.pki.publicKeyToPem(privKey);
+                        } else {
+                            // Public key
+                            const pubKey = forge.pki.setRsaPublicKey(
+                                new forge.jsbn.BigInteger(nHex, 16),
+                                new forge.jsbn.BigInteger(eHex, 16)
+                            );
+                            output.value = forge.pki.publicKeyToPem(pubKey);
+                        }
+                        showMessage('certs_msg', 'Chave PEM gerada!');
+                        break;
+                    }
+                    case 'generate_rsa_key': {
+                        const bits = parseInt(document.getElementById('convert_key_pass').value) || 2048;
+                        if (bits < 1024 || bits > 8192) return showMessage('certs_msg', 'Tamanho deve ser entre 1024 e 8192', 'error');
+                        showMessage('certs_msg', `Gerando chave RSA de ${bits} bits... (pode demorar)`);
+                        output.value = 'Gerando...';
+                        forge.pki.rsa.generateKeyPair({ bits, workers: -1 }, (err, keypair) => {
+                            if (err) { output.value = 'Erro: ' + err.message; return; }
+                            const privPem = forge.pki.privateKeyToPem(keypair.privateKey);
+                            const pubPem = forge.pki.publicKeyToPem(keypair.publicKey);
+                            output.value = `════ RSA ${bits}-bit Key Pair ════\n\n── Private Key ──\n${privPem}\n── Public Key ──\n${pubPem}`;
+                            showMessage('certs_msg', `Chave RSA ${bits} gerada!`);
+                        });
+                        break;
+                    }
+                    case 'generate_csr': {
+                        const cn = document.getElementById('convert_key_pass').value.trim();
+                        if (!cn) return showMessage('certs_msg', 'Digite o Common Name (CN) no campo acima', 'error');
+                        if (!input.includes('PRIVATE KEY')) return showMessage('certs_msg', 'Cole a chave privada PEM na entrada', 'error');
+                        const kCsr = forge.pki.privateKeyFromPem(input);
+                        const csr = forge.pki.createCertificationRequest();
+                        csr.publicKey = forge.pki.setRsaPublicKey(kCsr.n, kCsr.e);
+                        csr.setSubject([{ name: 'commonName', value: cn }]);
+                        csr.sign(kCsr);
+                        output.value = forge.pki.certificationRequestToPem(csr);
+                        showMessage('certs_msg', 'CSR gerado!');
+                        break;
+                    }
+                    case 'csr_to_text': {
+                        if (!input.includes('CERTIFICATE REQUEST')) return showMessage('certs_msg', 'Cole um CSR PEM (BEGIN CERTIFICATE REQUEST)', 'error');
+                        const csr = forge.pki.certificationRequestFromPem(input);
+                        let txt = `═══════════════════════════════════════════\n`;
+                        txt += `  INFORMAÇÕES DO CSR\n`;
+                        txt += `═══════════════════════════════════════════\n\n`;
+                        txt += `Subject: ${csr.subject.attributes.map(a => `${a.shortName || a.name}=${a.value}`).join(', ')}\n`;
+                        txt += `Signature Algorithm: ${csr.siginfo?.algorithmOid || 'N/A'}\n`;
+                        txt += `Public Key: RSA ${(csr.publicKey.n.bitLength())} bits\n`;
+                        txt += `Assinatura Válida: ${csr.verify() ? '✅ Sim' : '❌ Não'}\n`;
+                        output.value = txt;
+                        showMessage('certs_msg', 'CSR lido!');
+                        break;
+                    }
+                    case 'pfx_to_pem': {
+                        const pfxPass = document.getElementById('convert_key_pass').value;
+                        let asn1;
+                        try { asn1 = forge.asn1.fromDer(forge.util.decode64(input.replace(/\s/g, ''))); } catch (_) {}
+                        if (!asn1) return showMessage('certs_msg', 'Cole o PFX em Base64', 'error');
+                        const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, pfxPass);
+                        const cBags = p12.getBags({ bagType: forge.pki.oids.certBag });
+                        const certs = cBags[forge.pki.oids.certBag] || [];
+                        const kShr = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+                        const kPlain = p12.getBags({ bagType: forge.pki.oids.keyBag });
+                        const key = (kShr[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0]?.key) || (kPlain[forge.pki.oids.keyBag]?.[0]?.key);
+                        let pem = '';
+                        if (key) pem += forge.pki.privateKeyToPem(key) + '\n';
+                        certs.forEach(b => { pem += forge.pki.certificateToPem(b.cert) + '\n'; });
+                        output.value = pem || 'Nenhum dado extraído.';
+                        showMessage('certs_msg', 'PFX convertido para PEM!');
+                        break;
+                    }
+                    case 'cert_to_selfsigned': {
+                        if (!input.includes('PRIVATE KEY')) return showMessage('certs_msg', 'Cole a chave privada PEM na entrada', 'error');
+                        const days = parseInt(document.getElementById('convert_key_pass').value) || 365;
+                        const kSelf = forge.pki.privateKeyFromPem(input);
+                        const certSelf = forge.pki.createCertificate();
+                        certSelf.serialNumber = '01';
+                        certSelf.validity.notBefore = new Date();
+                        certSelf.validity.notAfter = new Date();
+                        certSelf.validity.notAfter.setDate(certSelf.validity.notAfter.getDate() + days);
+                        certSelf.setSubject([{ name: 'commonName', value: 'Self-Signed Certificate' }]);
+                        certSelf.setIssuer(certSelf.subject);
+                        certSelf.publicKey = forge.pki.setRsaPublicKey(kSelf.n, kSelf.e);
+                        certSelf.sign(kSelf);
+                        output.value = forge.pki.certificateToPem(certSelf);
+                        showMessage('certs_msg', `Cert auto-assinado (${days} dias) gerado!`);
+                        break;
+                    }
+                    case 'chain_concat': {
+                        // Extract all PEM blocks from input and extra
+                        const extraChain = document.getElementById('convert_extra').value.trim();
+                        const allText = input + '\n' + extraChain;
+                        const regex = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g;
+                        const matches = allText.match(regex);
+                        if (!matches || matches.length === 0) return showMessage('certs_msg', 'Nenhum certificado PEM encontrado na entrada', 'error');
+                        let chain = `Cadeia concatenada: ${matches.length} certificado(s)\n${'═'.repeat(50)}\n\n`;
+                        chain += matches.join('\n\n');
+                        output.value = chain;
+                        showMessage('certs_msg', `${matches.length} certificado(s) concatenado(s)!`);
+                        break;
+                    }
+                    case 'cert_days_left': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const cDays = forge.pki.certificateFromPem(input);
+                        const now = new Date();
+                        const diff = Math.ceil((cDays.validity.notAfter - now) / 86400000);
+                        let txt = `═══════════════════════════════════════════\n`;
+                        txt += `  VALIDADE DO CERTIFICADO\n`;
+                        txt += `═══════════════════════════════════════════\n\n`;
+                        txt += `Subject: ${cDays.subject.getField('CN')?.value || 'N/A'}\n`;
+                        txt += `Válido De: ${cDays.validity.notBefore.toLocaleString('pt-BR')}\n`;
+                        txt += `Válido Até: ${cDays.validity.notAfter.toLocaleString('pt-BR')}\n\n`;
+                        if (diff > 0) {
+                            txt += `✅ Válido — Faltam ${diff} dias\n`;
+                            if (diff <= 30) txt += `⚠️ Atenção: expira em menos de 30 dias!\n`;
+                            if (diff <= 7) txt += `🚨 Urgente: expira em menos de 7 dias!\n`;
+                        } else {
+                            txt += `❌ EXPIRADO — Vencido há ${Math.abs(diff)} dias\n`;
+                        }
+                        output.value = txt;
+                        showMessage('certs_msg', diff > 0 ? `Válido por mais ${diff} dias` : 'Certificado expirado!', diff > 0 ? 'success' : 'error');
                         break;
                     }
                     default:
