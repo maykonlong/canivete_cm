@@ -964,26 +964,56 @@
             <!-- Tab 2: Validar Par -->
             <div class="cert-panel" id="cert_pair">
                 <div class="panel">
-                    <div class="panel-header"><h3>Certificado (.cer/.crt/.pem)</h3></div>
+                    <div class="panel-header">
+                        <h3>Certificado (.cer/.crt/.pem)</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="pair_cert_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="pair_cert_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="pair_cert_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
                     <div class="panel-content"><textarea id="pair_cert_input" placeholder="-----BEGIN CERTIFICATE-----&#10;Cole o certificado aqui&#10;-----END CERTIFICATE-----"></textarea></div>
                 </div>
                 <div class="panel">
-                    <div class="panel-header"><h3>Chave Privada (.key/.pem)</h3></div>
+                    <div class="panel-header">
+                        <h3>Chave Privada (.key/.pem)</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="pair_key_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="pair_key_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="pair_key_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
                     <div class="panel-content"><textarea id="pair_key_input" placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;Cole a chave privada aqui&#10;-----END RSA PRIVATE KEY-----"></textarea></div>
                 </div>
                 <div class="actions-center">
                     <button class="btn btn-primary" id="cert_btn_pair">Verificar Par</button>
                 </div>
                 <div class="panel">
-                    <div class="panel-header"><h3>Resultado</h3></div>
-                    <div class="panel-content"><pre id="cert_pair_output" readonly style="min-height:120px;white-space:pre-wrap;font-family:monospace;font-size:0.85rem;padding:0.75rem;overflow:auto;"></pre></div>
+                    <div class="panel-header">
+                        <h3>Resultado</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar copy-btn" data-target="cert_pair_output_text"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="cert_pair_output_text"><svg><use href="#icon-download"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <pre id="cert_pair_output" readonly style="min-height:120px;white-space:pre-wrap;font-family:monospace;font-size:0.85rem;padding:0.75rem;overflow:auto;"></pre>
+                        <textarea id="cert_pair_output_text" style="display:none;"></textarea>
+                    </div>
                 </div>
             </div>
 
             <!-- Tab 3: Conversões -->
             <div class="cert-panel" id="cert_convert">
                 <div class="panel">
-                    <div class="panel-header"><h3>Entrada (PEM)</h3></div>
+                    <div class="panel-header">
+                        <h3>Entrada (PEM)</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="convert_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="convert_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="convert_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
                     <div class="panel-content"><textarea id="convert_input" placeholder="Cole o certificado ou chave em formato PEM"></textarea></div>
                 </div>
                 <div class="actions-center" style="flex-wrap:wrap;gap:8px;">
@@ -996,7 +1026,14 @@
                     <div class="panel-content"><input type="password" id="convert_key_pass" placeholder="Digite a senha da chave" style="width:100%;padding:0.5rem;"></div>
                 </div>
                 <div class="panel">
-                    <div class="panel-header"><h3>Resultado</h3></div>
+                    <div class="panel-header">
+                        <h3>Resultado</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar copy-btn" data-target="convert_output"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="convert_output"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="convert_output"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
                     <div class="panel-content"><textarea id="convert_output" readonly placeholder="Resultado da conversão..."></textarea></div>
                 </div>
             </div>
@@ -1008,6 +1045,7 @@
                         <h3>Arquivo PFX/PKCS#12</h3>
                         <div class="panel-toolbar">
                             <button class="btn-toolbar upload-btn" data-target="pfx_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="pfx_input"><svg><use href="#icon-copy"/></svg></button>
                             <button class="btn-toolbar clear-btn" data-target="pfx_input"><svg><use href="#icon-clear"/></svg></button>
                         </div>
                     </div>
@@ -1023,11 +1061,23 @@
                     <button class="btn btn-secondary" id="btn_pfx_both">Extrair Ambos</button>
                 </div>
                 <div class="panel">
-                    <div class="panel-header"><h3>Certificado Extraído</h3></div>
+                    <div class="panel-header">
+                        <h3>Certificado Extraído</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar copy-btn" data-target="pfx_cert_output"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="pfx_cert_output"><svg><use href="#icon-download"/></svg></button>
+                        </div>
+                    </div>
                     <div class="panel-content"><textarea id="pfx_cert_output" readonly placeholder="Certificado PEM aparecerá aqui..."></textarea></div>
                 </div>
                 <div class="panel">
-                    <div class="panel-header"><h3>Chave Privada Extraída</h3></div>
+                    <div class="panel-header">
+                        <h3>Chave Privada Extraída</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar copy-btn" data-target="pfx_key_output"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="pfx_key_output"><svg><use href="#icon-download"/></svg></button>
+                        </div>
+                    </div>
                     <div class="panel-content"><textarea id="pfx_key_output" readonly placeholder="Chave privada PEM aparecerá aqui..."></textarea></div>
                 </div>
             </div>

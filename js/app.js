@@ -1332,6 +1332,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 output += `Modulus (MD5, compatível com openssl x509 -modulus | md5sum):\n  ${modulusMd5}\n`;
 
                 document.getElementById('cert_info_output').textContent = output;
+                // Mirror to hidden textarea for copy/download toolbar
+                document.getElementById('cert_info_output').dataset.text = output;
                 showMessage('certs_msg', 'Informações extraídas com sucesso!');
             } catch (e) {
                 Logger.error('Erro ao analisar certificado', { error: e.message });
@@ -1376,6 +1378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     : '❌ PAR INVÁLIDO — Certificado e chave NÃO correspondem!';
 
                 document.getElementById('cert_pair_output').textContent = output;
+                document.getElementById('cert_pair_output_text').value = output;
                 showMessage('certs_msg', match ? 'Par válido!' : 'Par NÃO corresponde!', match ? 'success' : 'error');
             } catch (e) {
                 Logger.error('Erro ao validar par', { error: e.message });
