@@ -770,26 +770,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(typeof Papa === 'undefined') return showMessage('csv_msg', 'PapaParse não carregado. Verifique ./libs/papaparse.min.js', 'error');
                 const val = document.getElementById('csv_input').value.trim();
                 if(!val) return showMessage('csv_msg', 'Insira o CSV primeiro', 'error');
-                
-                Papa.parse(val, {
-                    header: true, 
-                    skipEmptyLines: true,
-                    complete: (res) => {
-                        if (res.errors && res.errors.length > 0) {
-                            Logger.warn('CSV Parse warnings', { errors: res.errors.length });
-                            showMessage('csv_msg', 'CSV convertido com avisos (veja o console)', 'success');
-                        } else {
-                            showMessage('csv_msg', 'Convertido para JSON com sucesso!');
-                        }
-                        document.getElementById('csv_json').value = JSON.stringify(res.data, null, 2);
-                    },
-                    error: (err) => {
-                        showMessage('csv_msg', 'Falha ao processar o CSV', 'error');
-                    }
+
+                // PapaParse retorna resultado síncrono para strings
+                const result = Papa.parse(val, {
+                    header: true,
+                    skipEmptyLines: true
                 });
+
+                if (result.errors && result.errors.length > 0) {
+                    Logger.warn('CSV Parse warnings', { errors: result.errors.length });
+                }
+
+                if (!result.data || result.data.length === 0) {
+                    showMessage('csv_msg', 'Nenhum dado encontrado. Verifique o formato CSV (separador vírgula, linhas com quebra).', 'error');
+                    return;
+                }
+
+                document.getElementById('csv_json').value = JSON.stringify(result.data, null, 2);
+                showMessage('csv_msg', `Convertido com sucesso! ${result.data.length} registro(s).`);
             } catch(e) {
-                Logger.error('Erro crítico ao ler CSV', { error: e.message });
-                showMessage('csv_msg', 'Erro crítico ao ler CSV: ' + e.message, 'error');
+                Logger.error('Erro ao ler CSV', { error: e.message });
+                showMessage('csv_msg', 'Erro ao ler CSV: ' + e.message, 'error');
             }
         });
 
@@ -798,14 +799,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(typeof Papa === 'undefined') return showMessage('csv_msg', 'PapaParse não carregado. Verifique ./libs/papaparse.min.js', 'error');
                 const val = document.getElementById('csv_json').value.trim();
                 if(!val) return showMessage('csv_msg', 'Insira o JSON primeiro', 'error');
-                
+
                 const parsedJSON = JSON.parse(val);
-                const csvStr = Papa.unparse(parsedJSON);
-                
+
+                // Aceita array direto ou objeto único
+                const data = Array.isArray(parsedJSON) ? parsedJSON : [parsedJSON];
+                if (data.length === 0) {
+                    showMessage('csv_msg', 'JSON vazio, nada para converter.', 'error');
+                    return;
+                }
+
+                const csvStr = Papa.unparse(data);
                 document.getElementById('csv_input').value = csvStr;
-                showMessage('csv_msg', 'Convertido para CSV com sucesso!');
+                showMessage('csv_msg', `Convertido para CSV! ${data.length} registro(s).`);
             } catch(e) {
-                Logger.error('JSON inválido ou mal formatado', { error: e.message });
+                Logger.error('JSON inválido', { error: e.message });
                 showMessage('csv_msg', 'JSON inválido ou mal formatado: ' + e.message, 'error');
             }
         });
