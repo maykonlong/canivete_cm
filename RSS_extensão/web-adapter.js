@@ -264,19 +264,20 @@
       );
     }
 
+    const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     const candidates = [];
 
-    // 1) Proxy local do server.py (melhor opção)
-    if (location.origin && location.origin !== 'null') {
+    // 1) Se estiver no servidor local, usar proxy local primeiro
+    if (isLocalhost && location.origin && location.origin !== 'null') {
       candidates.push(`${location.origin}/api/proxy?url=${encodeURIComponent(url)}`);
     }
 
-    // 2) Proxies públicos (fallback)
+    // 2) Tentativa direta (funciona se o servidor liberar CORS, ex: bcb.gov.br)
+    candidates.push(url);
+
+    // 3) Proxies públicos (fallback)
     candidates.push(`https://corsproxy.io/?${encodeURIComponent(url)}`);
     candidates.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-
-    // 3) Tentativa direta (só funciona se o feed liberar CORS)
-    candidates.push(url);
 
     let lastError = null;
     for (const candidate of candidates) {
