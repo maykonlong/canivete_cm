@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "RSS Feed Banco Central",
+  "version": "1.0.0",
+  "description": "Acompanhe notícias, comunicados e atas do Banco Central do Brasil em tempo real.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "RSS Feed Banco Central",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

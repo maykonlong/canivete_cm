@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canivete Suíço Dev</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="stylesheet" href="./css/style.css">
+    
+    <script src="./libs/qrcode.min.js"></script>
+    <script src="./libs/jsQR.min.js"></script>
+    <script src="./libs/papaparse.min.js"></script>
+    <script src="./libs/sql-formatter.min.js"></script>
+    <script src="./libs/vkbeautify.min.js"></script>
+</head>
+<body>
+    <!-- Símbolos SVG para reuso -->
+    <svg style="display:none;">
+        <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+        <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+        <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
+        <symbol id="icon-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></symbol>
+    </svg>
+
+    <div id="sidebarOverlay" class="sidebar-overlay" hidden></div>
+    <div id="fileProtocolBanner" class="file-protocol-banner" hidden>
+        <strong>Modo arquivo detectado.</strong>
+        RSS, PWA e alguns recursos de rede só funcionam pelo servidor local.
+        Execute <code>iniciar.bat</code> e abra <code>http://127.0.0.1:8765</code>.
+    </div>
+    <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+
+    <header class="mobile-header">
+        <button id="mobileToggle" class="menu-toggle" type="button" aria-label="Abrir menu de ferramentas" aria-expanded="false" aria-controls="appSidebar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <h2 style="font-size: 1.2rem;">Canivete Suíço Dev</h2>
+    </header>
+
+    <aside class="sidebar" id="appSidebar">
+        <div class="sidebar-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            <h2>Dev Tools</h2>
+            <button id="sidebarClose" class="sidebar-close" type="button" aria-label="Fechar menu">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="sidebar-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="search" id="navSearch" placeholder="Buscar ferramenta..." autocomplete="off" aria-label="Buscar ferramenta">
+        </div>
+        <p id="navSearchEmpty" class="nav-search-empty" hidden>Nenhuma ferramenta encontrada.</p>
+        <nav class="sidebar-nav" id="sidebarNav">
+            <div class="nav-category">Codificação</div>
+            <a href="#" class="nav-item active" data-target="view_base64_img">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Base64 ↔ Imagem
+            </a>
+            <a href="#" class="nav-item" data-target="view_text_base64">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                Texto ↔ Base64
+            </a>
+            <a href="#" class="nav-item" data-target="view_url">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                URL Encode ↔ Decode
+            </a>
+            <a href="#" class="nav-item" data-target="view_html">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                HTML Entities
+            </a>
+
+            <div class="nav-category">Segurança & Auth</div>
+            <a href="#" class="nav-item" data-target="view_jwt">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                JWT Decode
+            </a>
+            <a href="#" class="nav-item" data-target="view_hash">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Gerador de Hash
+            </a>
+
+            <div class="nav-category">Dados & Utilities</div>
+            <a href="#" class="nav-item" data-target="view_time">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Timestamp ↔ Data
+            </a>
+            <a href="#" class="nav-item" data-target="view_color">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                Conversor de Cores
+            </a>
+            <a href="#" class="nav-item" data-target="view_qr">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
+                Texto ↔ QR Code
+            </a>
+            <a href="#" class="nav-item" data-target="view_text_qr">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
+                Texto para QR Code
+            </a>
+            <a href="#" class="nav-item" data-target="view_boleto">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"></rect><line x1="6" y1="6" x2="6" y2="18"></line><line x1="10" y1="6" x2="10" y2="18"></line><line x1="14" y1="6" x2="14" y2="18"></line><line x1="18" y1="6" x2="18" y2="18"></line></svg>
+                Código de Barras / Boleto
+            </a>
+            <a href="#" class="nav-item" data-target="view_rss">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg>
+                RSS Reader
+            </a>
+            <a href="#" class="nav-item" data-target="view_history">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                Histórico
+            </a>
+            <a href="#" class="nav-item" data-target="view_binary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                Binário ↔ Texto
+            </a>
+            <a href="#" class="nav-item" data-target="view_hex">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                Hexadecimal ↔ Texto
+            </a>
+            <a href="#" class="nav-item" data-target="view_csv">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="21"></line></svg>
+                CSV ↔ JSON
+            </a>
+
+            <div class="nav-category">Formatadores & Validadores</div>
+            <a href="#" class="nav-item" data-target="view_json">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                JSON Formatter
+            </a>
+            <a href="#" class="nav-item" data-target="view_sql">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                SQL Formatter
+            </a>
+            <a href="#" class="nav-item" data-target="view_regex">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"></path></svg>
+                RegEx Tester
+            </a>
+            <a href="#" class="nav-item" data-target="view_xml">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                XML / HTML Beautifier
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="tool-header">
+            <h1 id="mainTitle">Base64 ↔ Imagem</h1>
+        </div>
+        
+        <input type="file" id="global_file_input" style="display:none;">
+
+        <!-- TOOL: Base64 ↔ Image -->
+        <section id="view_base64_img" class="tool-view active">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Imagem</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar download-btn" data-target="b64img_preview_img" title="Baixar PNG"><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="b64img_preview_img" title="Limpar"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="drop-zone" id="b64img_drop">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="margin-bottom:1rem;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <span class="drop-zone-text">Clique ou arraste a imagem aqui</span>
+                            <input type="file" id="b64img_file" accept="image/*" style="display:none;">
+                            <img id="b64img_preview" src="" alt="">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="b64img_to_base64">
+                        Extrair Base64 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="b64img_to_img">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Renderizar Img
+                    </button>
+                    <button class="btn btn-clear-all" data-target="b64img">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Código Base64</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="b64img_input" title="Upload .txt"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="b64img_input" title="Download .txt"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="b64img_input" title="Copiar"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="b64img_input" title="Limpar"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <textarea id="b64img_input" placeholder="data:image/png;base64,..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="b64img_msg"></div>
+        </section>
+
+        <!-- TOOL: Text ↔ Base64 -->
+        <section id="view_text_base64" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Texto (UTF-8)</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="txtb64_txt"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="txtb64_txt"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="txtb64_txt"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="txtb64_txt"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <textarea id="txtb64_txt" placeholder="Digite seu texto livre aqui..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="txtb64_encode">
+                        Codificar <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="txtb64_decode">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Decodificar
+                    </button>
+                    <button class="btn btn-clear-all" data-target="txtb64">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Base64</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="txtb64_b64"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="txtb64_b64"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="txtb64_b64"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="txtb64_b64"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <textarea id="txtb64_b64" placeholder="SGVsbG8gV29ybGQ="></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="txtb64_msg"></div>
+        </section>
+
+        <!-- TOOL: URL Encode ↔ Decode -->
+        <section id="view_url" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Texto Original</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="url_raw"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="url_raw"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="url_raw"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="url_raw"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="url_raw" placeholder="https://ex.com/?q=olá"></textarea></div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="url_btn_encode">Encode <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="url_btn_decode"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Decode</button>
+                    <button class="btn btn-clear-all" data-target="url">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>URL Encoded</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="url_encoded"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="url_encoded"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="url_encoded"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="url_encoded"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="url_encoded" placeholder="https%3A%2F%2Fex.com..."></textarea></div>
+                </div>
+            </div>
+            <div class="alert" id="url_msg"></div>
+        </section>
+
+        <!-- TOOL: HTML Entities Encode ↔ Decode -->
+        <section id="view_html" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>HTML Original</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="html_raw"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="html_raw"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="html_raw"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="html_raw"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="html_raw" placeholder="<script>alert('xss');</script>"></textarea></div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="html_btn_encode">Encode <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="html_btn_decode"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Decode</button>
+                    <button class="btn btn-clear-all" data-target="html">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>HTML Entities</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="html_encoded"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="html_encoded"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="html_encoded"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="html_encoded"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="html_encoded" placeholder="&lt;script&gt;alert('xss');&lt;/script&gt;"></textarea></div>
+                </div>
+            </div>
+            <div class="alert" id="html_msg"></div>
+        </section>
+
+        <!-- TOOL: JWT Decode -->
+        <section id="view_jwt" class="tool-view">
+            <div class="single-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Token JWT</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="jwt_token"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="jwt_token"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="jwt_token"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <textarea id="jwt_token" placeholder="ey..."></textarea>
+                    </div>
+                </div>
+                <div class="flex-row">
+                    <button class="btn btn-primary" id="jwt_btn_decode" style="flex:1;">Decodificar JWT</button>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Decoded Data</h3>
+                        <button class="btn-toolbar clear-btn" data-target="jwt_out"><svg><use href="#icon-clear"/></svg></button>
+                    </div>
+                    <div class="panel-content jwt-parts">
+                        <div class="jwt-header input-group">
+                            <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: -0.25rem;">
+                                <label style="margin: 0;">Header (Algoritmo e Tipo)</label>
+                                <button class="btn-toolbar copy-btn" data-target="jwt_header" title="Copiar Header"><svg><use href="#icon-copy"/></svg></button>
+                            </div>
+                            <pre id="jwt_header" class="code-block"></pre>
+                        </div>
+                        <div class="jwt-payload input-group">
+                            <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: -0.25rem;">
+                                <label style="margin: 0;">Payload (Dados)</label>
+                                <button class="btn-toolbar copy-btn" data-target="jwt_payload" title="Copiar Payload"><svg><use href="#icon-copy"/></svg></button>
+                            </div>
+                            <pre id="jwt_payload" class="code-block"></pre>
+                        </div>
+                        <div class="jwt-signature input-group">
+                            <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: -0.25rem;">
+                                <label style="margin: 0;">Signature (Assinatura)</label>
+                                <button class="btn-toolbar copy-btn" data-target="jwt_signature" title="Copiar Assinatura"><svg><use href="#icon-copy"/></svg></button>
+                            </div>
+                            <pre id="jwt_signature" class="code-block"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="jwt_msg"></div>
+        </section>
+
+        <!-- TOOL: Hash Generator -->
+        <section id="view_hash" class="tool-view">
+            <div class="single-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Input de Texto</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="hash_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="hash_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="hash_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="hash_input" placeholder="Digite para gerar os hashes automaticamente..."></textarea></div>
+                </div>
+                
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Hashes Gerados</h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="input-group">
+                            <label>SHA-1</label>
+                            <div class="flex-row">
+                                <input type="text" id="hash_sha1" readonly>
+                                <button class="btn-toolbar copy-btn" data-target="hash_sha1"><svg><use href="#icon-copy"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>SHA-256</label>
+                            <div class="flex-row">
+                                <input type="text" id="hash_sha256" readonly>
+                                <button class="btn-toolbar copy-btn" data-target="hash_sha256"><svg><use href="#icon-copy"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>SHA-512</label>
+                            <div class="flex-row">
+                                <input type="text" id="hash_sha512" readonly>
+                                <button class="btn-toolbar copy-btn" data-target="hash_sha512"><svg><use href="#icon-copy"/></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOOL: Timestamp ↔ Data -->
+        <section id="view_time" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Timestamp (Epoch)</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar copy-btn" data-target="time_ts"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="time_ts"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="input-group">
+                            <label>Segundos ou Milissegundos</label>
+                            <input type="number" id="time_ts" placeholder="1678901234">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="time_to_date">Para Data <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="time_to_ts"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Para Timestamp</button>
+                    <button class="btn btn-clear-all" data-target="time">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Data Humana</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar copy-btn" data-target="time_date"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="time_date"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="input-group">
+                            <label>Data Local (ISO Format)</label>
+                            <input type="text" id="time_date" placeholder="YYYY-MM-DDTHH:mm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="time_msg"></div>
+        </section>
+
+        <!-- TOOL: Color Converter -->
+        <section id="view_color" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Editor de Cores</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar clear-btn" data-target="color_hex"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="input-group">
+                            <label>Seletor Visual</label>
+                            <input type="color" id="color_picker" style="width: 100%; height: 50px; cursor: pointer; border: none; padding: 0; background: none;">
+                        </div>
+                        <div class="input-group" style="margin-top:1rem;">
+                            <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: -0.25rem;">
+                                <label style="margin: 0;">HEX</label>
+                                <button class="btn-toolbar copy-btn" data-target="color_hex" title="Copiar HEX"><svg><use href="#icon-copy"/></svg></button>
+                            </div>
+                            <input type="text" id="color_hex" placeholder="#000000">
+                        </div>
+                        <div class="input-group" style="margin-top:1rem;">
+                            <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: -0.25rem;">
+                                <label style="margin: 0;">RGB</label>
+                                <button class="btn-toolbar copy-btn" data-target="color_rgb" title="Copiar RGB"><svg><use href="#icon-copy"/></svg></button>
+                            </div>
+                            <input type="text" id="color_rgb" placeholder="0, 0, 0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-clear-all" data-target="color">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Preview & Informações</h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="color-preview" id="color_box" style="height: 100px; margin-bottom: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);"></div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%;">
+                            <div class="input-group">
+                                <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: -0.25rem;">
+                                    <label style="margin: 0;">HSL</label>
+                                    <button class="btn-toolbar copy-btn" data-target="color_hsl" title="Copiar HSL"><svg><use href="#icon-copy"/></svg></button>
+                                </div>
+                                <input type="text" id="color_hsl" readonly placeholder="0°, 0%, 0%">
+                            </div>
+                            <div class="input-group">
+                                <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: -0.25rem;">
+                                    <label style="margin: 0;">HSV</label>
+                                    <button class="btn-toolbar copy-btn" data-target="color_hsv" title="Copiar HSV"><svg><use href="#icon-copy"/></svg></button>
+                                </div>
+                                <input type="text" id="color_hsv" readonly placeholder="0°, 0%, 0%">
+                            </div>
+                            <div class="input-group" style="grid-column: 1 / -1;">
+                                <div class="flex-row" style="justify-content: space-between; align-items: center; margin-bottom: -0.25rem;">
+                                    <label style="margin: 0;">CMYK</label>
+                                    <button class="btn-toolbar copy-btn" data-target="color_cmyk" title="Copiar CMYK"><svg><use href="#icon-copy"/></svg></button>
+                                </div>
+                                <input type="text" id="color_cmyk" readonly placeholder="0%, 0%, 0%, 100%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="color_msg"></div>
+        </section>
+
+        <!-- TOOL: QR Code ↔ Texto -->
+        <section id="view_qr" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Conteúdo / Texto</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="qr_txt"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="qr_txt"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="qr_txt"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="qr_txt"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <textarea id="qr_txt" placeholder="https://seusite.com ou Chave Pix..."></textarea>
+                    </div>
+                </div>
+
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="qr_btn_gen">Gerar QR <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="qr_btn_read"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Ler Imagem</button>
+                    <button class="btn btn-clear-all" data-target="qr">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Imagem QR Code</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar download-btn" data-target="qr_canvas_container" title="Baixar PNG"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="qr_canvas_container" title="Limpar"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <input type="file" id="qr_file" accept="image/*" style="display:none;">
+                        <div class="canvas-container empty" id="qr_canvas_container">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="qr_msg"></div>
+        </section>
+
+        <!-- TOOL: Texto para QR Code -->
+        <section id="view_text_qr" class="tool-view">
+            <div class="single-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Texto para QR Code</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="text_qr_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="text_qr_input"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="text_qr_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="text_qr_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <textarea id="text_qr_input" placeholder="Digite o texto para converter em QR Code..."></textarea>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Preview do QR Code</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar download-btn" data-target="text_qr_canvas_container" title="Baixar PNG"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="text_qr_canvas_container" title="Limpar"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <input type="file" id="text_qr_file" accept="image/*" style="display:none;">
+                        <div class="canvas-container empty" id="text_qr_canvas_container">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="text_qr_msg"></div>
+        </section>
+
+        <!-- TOOL: Código de Barras / Boleto -->
+        <section id="view_boleto" class="tool-view tool-view-embed">
+            <iframe
+                id="boleto_frame"
+                class="tool-embed-frame"
+                src="./codigo_de_barras/codigo_de_barras_linha_digitavel.html"
+                title="Código de Barras e Linha Digitável"
+                loading="lazy"
+            ></iframe>
+        </section>
+
+        <!-- TOOL: RSS Reader -->
+        <section id="view_rss" class="tool-view tool-view-embed">
+            <iframe
+                id="rss_frame"
+                class="tool-embed-frame"
+                src="./RSS_extensão/popup.html"
+                title="RSS Feed Reader"
+                loading="lazy"
+            ></iframe>
+        </section>
+
+        <!-- TOOL: Histórico -->
+        <section id="view_history" class="tool-view">
+            <div class="single-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Histórico de Conversões</h3>
+                        <button class="btn-toolbar clear-btn" data-target="history_list" title="Limpar Histórico"><svg><use href="#icon-clear"/></svg></button>
+                    </div>
+                    <div class="panel-content">
+                        <div id="history_list" style="min-height: 200px;">
+                            <!-- Entradas do histórico serão adicionadas aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="history_msg"></div>
+        </section>
+
+        <!-- TOOL: Binary ↔ Text -->
+        <section id="view_binary" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Texto Original</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="bin_txt"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="bin_txt"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="bin_txt"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="bin_txt"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="bin_txt" placeholder="Texto livre..."></textarea></div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="bin_encode">Para Binário <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="bin_decode"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Para Texto</button>
+                    <button class="btn btn-clear-all" data-target="bin">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Código Binário</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="bin_bin"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="bin_bin"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="bin_bin"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="bin_bin"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="bin_bin" placeholder="01010100 01100101..."></textarea></div>
+                </div>
+            </div>
+            <div class="alert" id="bin_msg"></div>
+        </section>
+
+        <!-- TOOL: Hex ↔ Text -->
+        <section id="view_hex" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Texto Original</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="hex_txt"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="hex_txt"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="hex_txt"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="hex_txt"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="hex_txt" placeholder="Texto livre..."></textarea></div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="hex_encode">Para Hex <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="hex_decode"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Para Texto</button>
+                    <button class="btn btn-clear-all" data-target="hex">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Hexadecimal</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="hex_hex"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="hex_hex"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="hex_hex"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="hex_hex"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="hex_hex" placeholder="48 65 6C 6C 6F"></textarea></div>
+                </div>
+            </div>
+            <div class="alert" id="hex_msg"></div>
+        </section>
+
+        <!-- TOOL: CSV ↔ JSON -->
+        <section id="view_csv" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>CSV</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="csv_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="csv_input"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="csv_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="csv_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="csv_input" placeholder="id,nome&#10;1,João"></textarea></div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="csv_to_json">Para JSON <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="json_to_csv"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Para CSV</button>
+                    <button class="btn btn-clear-all" data-target="csv">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>JSON</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="csv_json"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar download-btn" data-target="csv_json"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="csv_json"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="csv_json"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="csv_json" placeholder="[ { ... } ]"></textarea></div>
+                </div>
+            </div>
+            <div class="alert" id="csv_msg"></div>
+        </section>
+
+        <!-- TOOL: JSON Formatter -->
+        <section id="view_json" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>JSON Input</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="json_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="json_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="json_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="json_input" placeholder='{"exemplo": "cole seu json aqui"}'></textarea></div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary" id="json_btn_format" style="width:100%;">Beautify (Formatar)</button>
+                    <button class="btn btn-secondary" id="json_btn_minify" style="width:100%;">Minify (Comprimir)</button>
+                    <button class="btn btn-clear-all" data-target="json">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>JSON Result</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar download-btn" data-target="json_output"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="json_output"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="json_output"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="json_output" readonly placeholder="Resultado formatação..."></textarea></div>
+                </div>
+            </div>
+            <div class="alert" id="json_msg"></div>
+        </section>
+
+        <!-- TOOL: SQL Formatter -->
+        <section id="view_sql" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>SQL Input</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="sql_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="sql_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="sql_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="sql_input" placeholder="SELECT * FROM users WHERE active = 1"></textarea></div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary" id="sql_btn_format" style="width:100%;">Formatar SQL</button>
+                    <button class="btn btn-clear-all" data-target="sql">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>SQL Formatted</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar download-btn" data-target="sql_output"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="sql_output"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="sql_output"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="sql_output" readonly placeholder="SELECT&#10;  *&#10;FROM&#10;  users..."></textarea></div>
+                </div>
+            </div>
+            <div class="alert" id="sql_msg"></div>
+        </section>
+
+        <!-- TOOL: Regex Tester -->
+        <section id="view_regex" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Expressão Regular</h3>
+                        <button class="btn-toolbar clear-btn" data-target="regex_pattern"><svg><use href="#icon-clear"/></svg></button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="input-group">
+                            <label>Pattern (Expressão)</label>
+                            <div class="flex-row">
+                                <span style="color: var(--text-muted); font-size: 1.2rem;">/</span>
+                                <input type="text" id="regex_pattern" placeholder="^([a-z0-9]+)$">
+                                <span style="color: var(--text-muted); font-size: 1.2rem;">/</span>
+                                <input type="text" id="regex_flags" value="gm" style="width: 60px;" title="Flags (g, i, m)">
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-top: 1rem; flex: 1;">
+                            <label>Texto de Teste</label>
+                            <textarea id="regex_text" placeholder="Digite o texto onde a expressão será buscada..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary" id="regex_btn_test" style="width:100%;">Testar RegEx</button>
+                    <button class="btn btn-clear-all" data-target="regex">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Matches (Resultados)</h3>
+                        <button class="btn-toolbar copy-btn" data-target="regex_output"><svg><use href="#icon-copy"/></svg></button>
+                    </div>
+                    <div class="panel-content">
+                        <pre id="regex_output" class="code-block" style="flex: 1; margin: 0; min-height: 200px;">Nenhum teste executado ainda...</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="alert" id="regex_msg"></div>
+        </section>
+
+        <!-- TOOL: XML/HTML Beautifier -->
+        <section id="view_xml" class="tool-view">
+            <div class="split-view">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Código Raw</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="xml_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="xml_input"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="xml_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="xml_input" placeholder="<html><body><p>Teste</p></body></html>"></textarea></div>
+                </div>
+                
+                <div class="actions-center">
+                    <button class="btn btn-primary btn-convert btn-convert-right" id="xml_btn_format">Beautify <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                    <button class="btn btn-secondary btn-convert btn-convert-left" id="xml_btn_minify"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Minify</button>
+                    <button class="btn btn-clear-all" data-target="xml">Limpar Tudo</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Resultado</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar download-btn" data-target="xml_output"><svg><use href="#icon-download"/></svg></button>
+                            <button class="btn-toolbar copy-btn" data-target="xml_output"><svg><use href="#icon-copy"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="xml_output"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="xml_output" readonly placeholder="Resultado..."></textarea></div>
+                </div>
+            </div>
+            <div class="alert" id="xml_msg"></div>
+        </section>
+
+    </main>
+
+    <script src="./js/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.log('ServiceWorker registration skipped or failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

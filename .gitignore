@@ -1,0 +1,25 @@
+# Artefatos de build / empacotamento
+RSS_extensão/RSS_extensao.zip
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Ambientes / segredos (por precaução, caso surjam no futuro)
+.env
+.env.*
+*.pem
+*.key

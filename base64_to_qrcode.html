@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 para QR Code</title>
+    <style>
+        /* CSS reset & variáveis */
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --error-color: #ef4444;
+            --success-color: #10b981;
+            --border-color: #334155;
+            --radius: 8px;
+        }
+        
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+        
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background: var(--bg-color); 
+            color: var(--text-color); 
+            display: flex; 
+            justify-content: center; 
+            padding: 2rem; 
+            min-height: 100vh; 
+        }
+        
+        .container { 
+            max-width: 800px; 
+            width: 100%; 
+            background: var(--surface-color); 
+            border-radius: var(--radius); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            padding: 2rem; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1.5rem; 
+        }
+        
+        h1 { 
+            font-size: 1.8rem; 
+            font-weight: 600; 
+            text-align: center; 
+            color: var(--primary-color); 
+        }
+        
+        .drop-zone { 
+            border: 2px dashed var(--border-color); 
+            border-radius: var(--radius); 
+            padding: 1.5rem; 
+            text-align: center; 
+            transition: all 0.3s ease; 
+            position: relative; 
+        }
+        
+        .drop-zone.dragover { 
+            border-color: var(--primary-color); 
+            background: rgba(59, 130, 246, 0.1); 
+        }
+        
+        textarea { 
+            width: 100%; 
+            height: 150px; 
+            background: rgba(0,0,0,0.2); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius); 
+            color: var(--text-color); 
+            padding: 1rem; 
+            font-family: monospace; 
+            font-size: 14px;
+            resize: vertical; 
+            transition: border 0.3s; 
+        }
+        
+        textarea:focus { 
+            outline: none; 
+            border-color: var(--primary-color); 
+        }
+        
+        .actions { 
+            display: flex; 
+            gap: 1rem; 
+            justify-content: center; 
+            flex-wrap: wrap; 
+        }
+        
+        button { 
+            background: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 0.75rem 1.5rem; 
+            border-radius: var(--radius); 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: background 0.3s, transform 0.1s; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+        }
+        
+        button:hover { 
+            background: var(--primary-hover); 
+        }
+        
+        button:active { 
+            transform: scale(0.98); 
+        }
+        
+        button:disabled { 
+            background: var(--border-color); 
+            cursor: not-allowed; 
+            color: var(--text-muted); 
+        }
+        
+        .btn-secondary {
+            background: var(--surface-color); 
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .preview-section { 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 1rem; 
+            padding-top: 1.5rem; 
+            border-top: 1px solid var(--border-color); 
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .preview-box { 
+            width: 250px; 
+            height: 250px; 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+            background: white; 
+        }
+        
+        .preview-box img { 
+            max-width: 100%; 
+            max-height: 100%; 
+            object-fit: contain; 
+        }
+        
+        .message { 
+            padding: 1rem; 
+            border-radius: var(--radius); 
+            display: none; 
+            text-align: center; 
+            font-weight: 500; 
+        }
+        
+        .message.error { 
+            display: block; 
+            background: rgba(239, 68, 68, 0.1); 
+            color: var(--error-color); 
+            border: 1px solid var(--error-color); 
+        }
+        
+        .message.success { 
+            display: block; 
+            background: rgba(16, 185, 129, 0.1); 
+            color: var(--success-color); 
+            border: 1px solid var(--success-color); 
+        }
+        
+        /* Ocultar visualmente mas manter acessível */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conversor Base64 para QR Code</h1>
+        <p style="text-align: center; color: var(--text-muted);">
+            Cole sua string Base64 do QR Code abaixo ou arraste um arquivo de texto.
+        </p>
+        
+        <!-- Área de Input / Drag & Drop -->
+        <div class="drop-zone" id="dropZone">
+            <label for="base64Input" class="sr-only">Texto Base64</label>
+            <textarea id="base64Input" placeholder="Cole o texto Base64 aqui...&#10;Ex: iVBORw0KGgo...&#10;Pode ou não incluir 'data:image/png;base64,'"></textarea>
+        </div>
+
+        <!-- Área de Mensagens de Erro/Sucesso -->
+        <div class="message" id="statusMessage" role="alert"></div>
+
+        <!-- Botões de Ação -->
+        <div class="actions">
+            <button id="btnConvert">
+                <!-- Ícone de Play/Convert -->
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                Converter
+            </button>
+            <button id="btnClear" class="btn-secondary">
+                <!-- Ícone de Trash/Clear -->
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Limpar
+            </button>
+        </div>
+
+        <!-- Área de Preview (Invisível por padrão) -->
+        <div class="preview-section" id="previewSection">
+            <h2 style="font-size: 1.2rem; color: var(--text-color);">Preview da Imagem</h2>
+            <div class="preview-box">
+                <img id="qrPreview" src="" alt="Preview do QR Code gerado pelo Base64">
+            </div>
+            <button id="btnDownload">
+                <!-- Ícone de Download -->
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar PNG
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Mapeamento dos elementos do DOM
+        const base64Input = document.getElementById('base64Input');
+        const btnConvert = document.getElementById('btnConvert');
+        const btnClear = document.getElementById('btnClear');
+        const btnDownload = document.getElementById('btnDownload');
+        const previewSection = document.getElementById('previewSection');
+        const qrPreview = document.getElementById('qrPreview');
+        const statusMessage = document.getElementById('statusMessage');
+        const dropZone = document.getElementById('dropZone');
+
+        let currentImageSrc = '';
+
+        /**
+         * Exibe uma mensagem na tela (erro ou sucesso)
+         * @param {string} text - O texto da mensagem
+         * @param {string} type - 'error' ou 'success'
+         */
+        function showMessage(text, type) {
+            statusMessage.textContent = text;
+            statusMessage.className = `message ${type}`;
+            // Esconde a mensagem após 5 segundos
+            setTimeout(() => {
+                if(statusMessage.textContent === text) {
+                    statusMessage.style.display = 'none';
+                    statusMessage.className = 'message';
+                }
+            }, 5000);
+        }
+
+        /**
+         * Limpa todos os campos e reseta a UI
+         */
+        function clearAll() {
+            base64Input.value = '';
+            previewSection.style.display = 'none';
+            qrPreview.src = '';
+            currentImageSrc = '';
+            statusMessage.style.display = 'none';
+            base64Input.focus();
+        }
+
+        /**
+         * Valida se a string parece ser um Base64 válido
+         * @param {string} str - A string base64 a ser validada
+         */
+        function isValidBase64(str) {
+            let pureBase64 = str.trim();
+            
+            // Remove o prefixo data URI se existir (ex: data:image/png;base64,)
+            if (pureBase64.includes(',')) {
+                pureBase64 = pureBase64.split(',')[1];
+            }
+            if (!pureBase64) return false;
+            
+            // Regex para validar os caracteres de um Base64 válido
+            const base64Regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+            
+            // Remove os espaços/quebras de linha antes de testar
+            const cleanedBase64 = pureBase64.replace(/\s/g, '');
+            
+            // Rejeitar strings muito pequenas que obviamente não são imagens
+            if (cleanedBase64.length < 20) return false;
+
+            return base64Regex.test(cleanedBase64);
+        }
+
+        /**
+         * Função principal de conversão
+         */
+        function convertBase64() {
+            const rawValue = base64Input.value.trim();
+            if (!rawValue) {
+                showMessage('Por favor, insira um texto Base64.', 'error');
+                return;
+            }
+
+            if (!isValidBase64(rawValue)) {
+                showMessage('O texto inserido não parece ser um formato Base64 válido.', 'error');
+                previewSection.style.display = 'none';
+                return;
+            }
+
+            let finalSrc = rawValue;
+            
+            // Verifica se possui o prefixo data URI. Se não, assume que é imagem PNG (comum em QR Codes)
+            if (!rawValue.startsWith('data:')) {
+                finalSrc = `data:image/png;base64,${rawValue.replace(/\s/g, '')}`;
+            } else {
+                // Mesmo que tenha o prefixo, removemos quebras de linha para evitar erro de parse do browser
+                finalSrc = rawValue.replace(/\s/g, '');
+            }
+
+            // Cria um objeto de imagem na memória para testar se é renderizável
+            const imgTest = new Image();
+            
+            imgTest.onload = function() {
+                qrPreview.src = finalSrc;
+                currentImageSrc = finalSrc;
+                previewSection.style.display = 'flex';
+                showMessage('Imagem carregada com sucesso!', 'success');
+            };
+            
+            imgTest.onerror = function() {
+                showMessage('Base64 válido, mas não pode ser renderizado como imagem suportada.', 'error');
+                previewSection.style.display = 'none';
+            };
+            
+            imgTest.src = finalSrc;
+        }
+
+        /**
+         * Aciona o download da imagem carregada
+         */
+        function downloadImage() {
+            if (!currentImageSrc) return;
+            
+            const a = document.createElement('a');
+            a.href = currentImageSrc;
+            // Gera um nome único baseado na hora atual
+            a.download = `qrcode_${new Date().getTime()}.png`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+
+        btnConvert.addEventListener('click', convertBase64);
+        btnClear.addEventListener('click', clearAll);
+        btnDownload.addEventListener('click', downloadImage);
+
+        // Auto-converter ao colar (Paste) no campo de texto com um pequeno delay
+        base64Input.addEventListener('paste', () => {
+            setTimeout(() => {
+                if(base64Input.value.trim()) {
+                    convertBase64();
+                }
+            }, 100);
+        });
+
+        // --------------------------------------------
+        // DRAG AND DROP HANDLERS
+        // --------------------------------------------
+        
+        // Impede o comportamento padrão de abrir o arquivo arrastado no browser
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Adiciona classe visual ao passar por cima
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        // Remove classe visual ao sair ou soltar
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        // Trata o evento de soltar o arquivo (Drop)
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            
+            if (dt.files && dt.files.length > 0) {
+                const file = dt.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
+                        // Arquivo de texto: assume que contém a string Base64
+                        base64Input.value = e.target.result;
+                        convertBase64();
+                    } else if (file.type.startsWith('image/')) {
+                        // Opcional: Se arrastarem a própria imagem, extrai o Base64 para a caixa de texto
+                        base64Input.value = e.target.result;
+                        convertBase64();
+                    } else {
+                        showMessage('Formato de arquivo não suportado. Use .txt ou imagens.', 'error');
+                    }
+                };
+
+                if (file.type.startsWith('image/')) {
+                    reader.readAsDataURL(file); // Lê imagem como Base64
+                } else {
+                    reader.readAsText(file); // Lê texto
+                }
+            } else {
+                // Trata caso o usuário arraste um texto selecionado de outro lugar
+                const text = dt.getData('text');
+                if (text) {
+                    base64Input.value = text;
+                    convertBase64();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

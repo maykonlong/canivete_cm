@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texto para QR Code</title>
+    <style>
+        /* CSS reset & variáveis */
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --error-color: #ef4444;
+            --success-color: #10b981;
+            --border-color: #334155;
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: var(--surface-color);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            color: var(--text-color);
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            color: var(--text-muted);
+        }
+
+        .btn-secondary {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .preview-section {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .preview-box {
+            width: 250px;
+            height: 250px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background: white;
+        }
+
+        .preview-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: var(--radius);
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        .message.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        /* Ocultar visualmente mas manter acessível */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conversor Texto para QR Code</h1>
+        <p style="text-align: center; color: var(--text-muted);">
+            Digite ou cole o texto abaixo para gerar um QR Code.
+        </p>
+
+        <!-- Área de Input -->
+        <div class="input-section">
+            <label for="textInput" class="sr-only">Texto para converter</label>
+            <textarea id="textInput" placeholder="Digite ou cole o texto aqui..."></textarea>
+        </div>
+
+        <!-- Área de Mensagens de Erro/Sucesso -->
+        <div class="message" id="statusMessage" role="alert"></div>
+
+        <!-- Botões de Ação -->
+        <div class="actions">
+            <button id="btnGenerate">
+                <!-- Ícone de Play/Generate -->
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                Gerar QR Code
+            </button>
+            <button id="btnClear" class="btn-secondary">
+                <!-- Ícone de Trash/Clear -->
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Limpar
+            </button>
+        </div>
+
+        <!-- Área de Preview (Invisível por padrão) -->
+        <div class="preview-section" id="previewSection">
+            <h2 style="font-size: 1.2rem; color: var(--text-color);">Preview do QR Code</h2>
+            <div class="preview-box">
+                <img id="qrPreview" src="" alt="Preview do QR Code gerado">
+            </div>
+            <button id="btnDownload">
+                <!-- Ícone de Download -->
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar PNG
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Mapeamento dos elementos do DOM
+        const textInput = document.getElementById('textInput');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const btnClear = document.getElementById('btnClear');
+        const btnDownload = document.getElementById('btnDownload');
+        const previewSection = document.getElementById('previewSection');
+        const qrPreview = document.getElementById('qrPreview');
+        const statusMessage = document.getElementById('statusMessage');
+
+        let currentImageSrc = '';
+
+        /**
+         * Exibe uma mensagem na tela (erro ou sucesso)
+         * @param {string} text - O texto da mensagem
+         * @param {string} type - 'error' ou 'success'
+         */
+        function showMessage(text, type) {
+            statusMessage.textContent = text;
+            statusMessage.className = `message ${type}`;
+            // Esconde a mensagem após 5 segundos
+            setTimeout(() => {
+                if(statusMessage.textContent === text) {
+                    statusMessage.style.display = 'none';
+                    statusMessage.className = 'message';
+                }
+            }, 5000);
+        }
+
+        /**
+         * Limpa todos os campos e reseta a UI
+         */
+        function clearAll() {
+            textInput.value = '';
+            previewSection.style.display = 'none';
+            qrPreview.src = '';
+            currentImageSrc = '';
+            statusMessage.style.display = 'none';
+            textInput.focus();
+        }
+
+        /**
+         * Função principal de geração do QR Code
+         */
+        function generateQRCode() {
+            const text = textInput.value.trim();
+            if (!text) {
+                showMessage('Por favor, insira algum texto.', 'error');
+                return;
+            }
+
+            // Verifica se o texto é muito longo para um QR Code (limitação do formato)
+            if (text.length > 4000) {
+                showMessage('Texto muito longo para QR Code. Limite de 4000 caracteres.', 'error');
+                previewSection.style.display = 'none';
+                return;
+            }
+
+            // Cria o QR Code usando a biblioteca QRCode
+            const canvasContainer = document.createElement('div');
+            canvasContainer.style.display = 'none';
+            document.body.appendChild(canvasContainer);
+
+            try {
+                // Usando a biblioteca QRCode já disponível no projeto
+                if (typeof QRCode === 'undefined') {
+                    showMessage('Biblioteca QRCode não encontrada.', 'error');
+                    return;
+                }
+
+                // Gera o QR Code diretamente no canvas do DOM para evitar problemas de renderização
+                const canvas = document.createElement('canvas');
+                new QRCode(canvas, {
+                    text: text,
+                    width: 200,
+                    height: 200,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+
+                // Converte o canvas para data URL
+                const dataUrl = canvas.toDataURL('image/png');
+
+                // Atualiza a imagem no preview
+                qrPreview.src = dataUrl;
+                currentImageSrc = dataUrl;
+                previewSection.style.display = 'flex';
+                showMessage('QR Code gerado com sucesso!', 'success');
+
+                // Remove o canvas temporário
+                document.body.removeChild(canvasContainer);
+            } catch (error) {
+                console.error('Erro ao gerar QR Code:', error);
+                showMessage('Erro ao gerar QR Code. Tente novamente.', 'error');
+                previewSection.style.display = 'none';
+            }
+        }
+
+        /**
+         * Aciona o download da imagem carregada
+         */
+        function downloadImage() {
+            if (!currentImageSrc) return;
+
+            const a = document.createElement('a');
+            a.href = currentImageSrc;
+            // Gera um nome único baseado na hora atual
+            a.download = `qrcode_${new Date().getTime()}.png`;
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+
+        btnGenerate.addEventListener('click', generateQRCode);
+        btnClear.addEventListener('click', clearAll);
+        btnDownload.addEventListener('click', downloadImage);
+
+        // Auto-gera QR Code ao digitar (com delay para evitar processamento excessivo)
+        let typingTimer;
+        textInput.addEventListener('input', () => {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                if(textInput.value.trim()) {
+                    generateQRCode();
+                }
+            }, 500); // Delay de 500ms
+        });
+
+        // Limpa o preview quando o campo é limpo
+        textInput.addEventListener('input', () => {
+            if (!textInput.value.trim()) {
+                previewSection.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
