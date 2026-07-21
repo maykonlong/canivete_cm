@@ -1,0 +1,57 @@
+name: CI - Canivete Suíço Dev
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Executar ESLint
+        run: npm run lint
+
+      - name: Executar testes unitários
+        run: npm test
+
+  html-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Verificar index.html existe
+        run: test -f index.html
+
+      - name: Verificar libs essenciais existem
+        run: |
+          test -f libs/qrcode.min.js
+          test -f libs/jsQR.min.js
+          test -f libs/papaparse.min.js
+          test -f libs/dompurify.min.js
+          test -f libs/sql-formatter.min.js
+          test -f libs/vkbeautify.min.js
+
+      - name: Verificar Service Worker existe
+        run: test -f sw.js
+
+      - name: Verificar manifest.json existe
+        run: test -f manifest.json

@@ -1462,7 +1462,15 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       paragraphs.forEach(para => {
         const p = document.createElement('p');
-        p.innerHTML = para; // Injeta como innerHTML para que as tags <span> do glossário funcionem
+        // Sanitize com DOMPurify: permite apenas tags seguras do glossário
+        if (typeof DOMPurify !== 'undefined') {
+          p.innerHTML = DOMPurify.sanitize(para, {
+            ALLOWED_TAGS: ['span', 'strong', 'em', 'b', 'i', 'br', 'a'],
+            ALLOWED_ATTR: ['class', 'data-tooltip', 'href', 'title', 'target', 'rel']
+          });
+        } else {
+          p.textContent = para.replace(/<[^>]*>/g, ''); // Fallback: texto puro
+        }
         readerTextContent.appendChild(p);
       });
     }

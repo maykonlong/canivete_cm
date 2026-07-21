@@ -2,9 +2,13 @@
 RSS_extensão/RSS_extensao.zip
 *.zip
 
+# Dependências
+node_modules/
+
 # Python
 __pycache__/
 *.pyc
+*.pyo
 
 # Sistema Operacional
 .DS_Store
@@ -23,3 +27,7 @@ desktop.ini
 .env.*
 *.pem
 *.key
+
+# Coverage
+coverage/
+.nyc_output/

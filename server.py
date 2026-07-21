@@ -3,6 +3,7 @@
 """
 Servidor local do Canivete Suíço Dev.
 Serve os arquivos estáticos e um proxy /api/proxy?url= para feeds RSS (CORS).
+Inclui whitelist de origins para CORS.
 """
 
 from __future__ import annotations
@@ -22,6 +23,34 @@ HOST = "127.0.0.1"
 PORT = 8765
 ROOT = Path(__file__).resolve().parent
 
+# =============================================
+# CORS Whitelist — Origins permitidas
+# Em desenvolvimento, permite localhost e 127.0.0.1 em qualquer porta.
+# Em produção (GitHub Pages), permite o domínio específico.
+# =============================================
+ALLOWED_ORIGINS = {
+    f"http://{HOST}:{PORT}",
+    f"http://localhost:{PORT}",
+    "http://127.0.0.1:8765",
+    "http://localhost:8765",
+    "https://seu-usuario.github.io",  # Ajuste para seu GitHub Pages
+}
+
+# Prefixos de origin permitidos (para portas dinâmicas)
+ALLOWED_ORIGIN_PREFIXES = [
+    "http://127.0.0.1:",
+    "http://localhost:",
+]
+
+
+def is_origin_allowed(origin: str | None) -> bool:
+    """Verifica se a origin está na whitelist."""
+    if not origin:
+        return True  # Requisições sem Origin (mesma origem, file://)
+    if origin in ALLOWED_ORIGINS:
+        return True
+    return any(origin.startswith(prefix) for prefix in ALLOWED_ORIGIN_PREFIXES)
+
 
 class DevToolsHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -32,11 +61,21 @@ class DevToolsHandler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
+    def _cors_headers(self, origin: str | None = None):
+        """Envia headers CORS baseado na whitelist."""
+        if is_origin_allowed(origin):
+            self.send_header("Access-Control-Allow-Origin", origin or "*")
+        else:
+            # Fallback: permite em dev local, bloqueia em produção
+            self.send_header("Access-Control-Allow-Origin", f"http://{HOST}:{PORT}")
+
     def do_OPTIONS(self):
+        origin = self.headers.get("Origin")
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self._cors_headers(origin)
         self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "*")
+        self.send_header("Access-Control-Max-Age", "86400")
         self.end_headers()
 
     def do_GET(self):
@@ -45,7 +84,7 @@ class DevToolsHandler(SimpleHTTPRequestHandler):
             self.handle_proxy(parsed)
             return
         if parsed.path == "/api/health":
-            self.send_json({"ok": True, "service": "canivete-suico-dev"})
+            self.send_json({"ok": True, "service": "canivete-suico-dev", "version": "2.0.0"})
             return
         super().do_GET()
 
@@ -59,14 +98,21 @@ class DevToolsHandler(SimpleHTTPRequestHandler):
         target = unquote(target)
         scheme = urlparse(target).scheme.lower()
         if scheme not in ("http", "https"):
-            self.send_error_json(400, "URL inválida")
+            self.send_error_json(400, "URL inválida: esquema não permitido")
+            return
+
+        # Bloqueia acesso a redes internas via proxy (SSRF protection)
+        parsed_target = urlparse(target)
+        hostname = parsed_target.hostname or ""
+        if hostname in ("127.0.0.1", "localhost", "::1", "0.0.0.0"):
+            self.send_error_json(403, "Acesso a localhost não permitido via proxy")
             return
 
         try:
             req = urllib.request.Request(
                 target,
                 headers={
-                    "User-Agent": "CaniveteSuicoDev/1.0 (+local-proxy)",
+                    "User-Agent": "CaniveteSuicoDev/2.0 (+local-proxy)",
                     "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
                 },
                 method="GET",
@@ -75,9 +121,10 @@ class DevToolsHandler(SimpleHTTPRequestHandler):
                 body = resp.read()
                 content_type = resp.headers.get("Content-Type", "application/xml; charset=utf-8")
 
+            origin = self.headers.get("Origin")
             self.send_response(200)
             self.send_header("Content-Type", content_type)
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self._cors_headers(origin)
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -88,9 +135,10 @@ class DevToolsHandler(SimpleHTTPRequestHandler):
 
     def send_json(self, payload, status=200):
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        origin = self.headers.get("Origin")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self._cors_headers(origin)
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -99,7 +147,8 @@ class DevToolsHandler(SimpleHTTPRequestHandler):
         self.send_json({"ok": False, "error": message}, status=status)
 
     def log_message(self, fmt, *args):
-        sys.stdout.write("[%s] %s\n" % (self.log_date_time_string(), fmt % args))
+        # Structured log format
+        sys.stdout.write("[%s] %s %s\n" % (self.log_date_time_string(), self.address_string(), fmt % args))
 
 
 def port_free(port: int) -> bool:
@@ -120,10 +169,12 @@ def main():
     url = f"http://{HOST}:{port}/index.html"
 
     print("=" * 60)
-    print("  Canivete Suíço Dev — servidor local")
+    print("  Canivete Suíço Dev — servidor local v2.0.0")
     print("=" * 60)
     print(f"  Abrindo: {url}")
     print("  Proxy RSS: /api/proxy?url=<feed>")
+    print("  Health:    /api/health")
+    print("  CORS:      Whitelist ativa")
     print("  Ctrl+C para encerrar")
     print("=" * 60)
 

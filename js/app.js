@@ -150,6 +150,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ==========================================
+    // Structured Logger
+    // ==========================================
+    const Logger = {
+        _log(level, message, data = {}) {
+            const entry = {
+                timestamp: new Date().toISOString(),
+                level,
+                message,
+                ...data
+            };
+            if (level === 'error') {
+                console.error(JSON.stringify(entry));
+            } else if (level === 'warn') {
+                console.warn(JSON.stringify(entry));
+            } else {
+                console.log(JSON.stringify(entry));
+            }
+        },
+        info(message, data) { this._log('info', message, data); },
+        warn(message, data) { this._log('warn', message, data); },
+        error(message, data) { this._log('error', message, data); }
+    };
+
+    // ==========================================
     // Global Toolbar (Upload, Download, Copy, Clear)
     // ==========================================
     const globalFileInput = document.getElementById('global_file_input');
@@ -433,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const hash512 = await crypto.subtle.digest('SHA-512', data);
                 document.getElementById('hash_sha512').value = bufferToHex(hash512);
             } catch(e) {
-                console.error('Hash error', e);
+                Logger.error('Hash generation error', { error: e.message });
             }
         };
 
@@ -752,7 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     skipEmptyLines: true,
                     complete: (res) => {
                         if (res.errors && res.errors.length > 0) {
-                            console.error('CSV Parse Errors:', res.errors);
+                            Logger.warn('CSV Parse warnings', { errors: res.errors.length });
                             showMessage('csv_msg', 'CSV convertido com avisos (veja o console)', 'success');
                         } else {
                             showMessage('csv_msg', 'Convertido para JSON com sucesso!');
@@ -764,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             } catch(e) {
-                console.error(e);
+                Logger.error('Erro crítico ao ler CSV', { error: e.message });
                 showMessage('csv_msg', 'Erro crítico ao ler CSV: ' + e.message, 'error');
             }
         });
@@ -781,7 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('csv_input').value = csvStr;
                 showMessage('csv_msg', 'Convertido para CSV com sucesso!');
             } catch(e) {
-                console.error(e);
+                Logger.error('JSON inválido ou mal formatado', { error: e.message });
                 showMessage('csv_msg', 'JSON inválido ou mal formatado: ' + e.message, 'error');
             }
         });
@@ -914,6 +938,278 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // ==========================================
+    // Shared: QR Code Image Reading with Binarization Fallback
+    // ==========================================
+    const readQRFromImage = (dataUrl, onSuccess, onError) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const MAX_SIZE = 1000;
+            let w = img.width;
+            let h = img.height;
+            if (w > MAX_SIZE || h > MAX_SIZE) {
+                const r = Math.min(MAX_SIZE / w, MAX_SIZE / h);
+                w = w * r; h = h * r;
+            }
+            canvas.width = w; canvas.height = h;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+
+            const imageData = ctx.getImageData(0, 0, w, h);
+            let code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+
+            // Fallback de Binarização para QR Codes coloridos/gradientes
+            if (!code) {
+                const thresholds = [200, 160, 220, 120];
+                for (const t of thresholds) {
+                    const imgDataCopy = ctx.getImageData(0, 0, w, h);
+                    const data = imgDataCopy.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const luminance = (0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2]);
+                        const val = luminance > t ? 255 : 0;
+                        data[i] = data[i+1] = data[i+2] = val;
+                    }
+                    code = jsQR(imgDataCopy.data, imgDataCopy.width, imgDataCopy.height, { inversionAttempts: "attemptBoth" });
+                    if (code) break;
+                }
+            }
+
+            onSuccess(code, img);
+        };
+        img.onerror = () => onError('Erro ao carregar imagem');
+        img.src = dataUrl;
+    };
+
+    // ==========================================
+    // Tool: Texto para QR Code (moved inside handler)
+    // ==========================================
+    const initTextQR = () => {
+        const textInput = document.getElementById('text_qr_input');
+        const canvasContainer = document.getElementById('text_qr_canvas_container');
+        const fileInput = document.getElementById('text_qr_file');
+
+        canvasContainer.addEventListener('cleared', () => {
+            fileInput.value = '';
+            canvasContainer.innerHTML = '';
+            canvasContainer.classList.add('empty');
+        });
+
+        let typingTimer;
+        textInput.addEventListener('input', () => {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                if (textInput.value.trim()) {
+                    generateQRCodeFromText();
+                } else {
+                    canvasContainer.innerHTML = '';
+                    canvasContainer.classList.add('empty');
+                }
+            }, 500);
+        });
+
+        function generateQRCodeFromText() {
+            const text = textInput.value.trim();
+            if (!text) return;
+
+            if (text.length > 4000) {
+                showMessage('text_qr_msg', 'Texto muito longo para QR Code. Limite de 4000 caracteres.', 'error');
+                canvasContainer.innerHTML = '';
+                canvasContainer.classList.add('empty');
+                return;
+            }
+
+            try {
+                canvasContainer.innerHTML = '';
+                canvasContainer.classList.remove('empty');
+
+                const canvas = document.createElement('canvas');
+                new QRCode(canvas, {
+                    text: text,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                canvasContainer.appendChild(canvas);
+                showMessage('text_qr_msg', 'QR Code gerado com sucesso!');
+                addToHistory('text_qr', text);
+            } catch (error) {
+                Logger.error('Erro ao gerar QR Code', { error: error.message });
+                showMessage('text_qr_msg', 'Erro ao gerar QR Code. Tente novamente.', 'error');
+                canvasContainer.innerHTML = '';
+                canvasContainer.classList.add('empty');
+            }
+        }
+
+        // Uses shared readQRFromImage helper (no duplicate code)
+        const processQRImage = (file) => {
+            if (!file) return showMessage('text_qr_msg', 'Nenhum arquivo selecionado', 'error');
+            if (typeof jsQR === 'undefined') return showMessage('text_qr_msg', 'Erro: jsQR não carregada.', 'error');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                readQRFromImage(e.target.result, (code, img) => {
+                    canvasContainer.innerHTML = '';
+                    canvasContainer.classList.remove('empty');
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '100%';
+                    img.style.objectFit = 'contain';
+                    canvasContainer.appendChild(img);
+
+                    if (code) {
+                        textInput.value = code.data;
+                        showMessage('text_qr_msg', 'QR Code lido com sucesso!');
+                        addToHistory('text_qr_read', code.data);
+                    } else {
+                        showMessage('text_qr_msg', 'QR Code ilegível. Tente aumentar o contraste da imagem.', 'error');
+                    }
+                }, (err) => {
+                    showMessage('text_qr_msg', err, 'error');
+                });
+            };
+            reader.readAsDataURL(file);
+        };
+
+        canvasContainer.addEventListener('click', () => fileInput.click());
+        canvasContainer.style.cursor = 'pointer';
+
+        canvasContainer.addEventListener('dragover', e => {
+            e.preventDefault();
+            canvasContainer.style.borderColor = 'var(--primary)';
+            canvasContainer.style.backgroundColor = 'rgba(59, 130, 246, 0.05)';
+        });
+        canvasContainer.addEventListener('dragleave', () => {
+            canvasContainer.style.borderColor = '';
+            canvasContainer.style.backgroundColor = '';
+        });
+        canvasContainer.addEventListener('drop', e => {
+            e.preventDefault();
+            canvasContainer.style.borderColor = '';
+            canvasContainer.style.backgroundColor = '';
+            if (e.dataTransfer.files.length) processQRImage(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', e => {
+            if (e.target.files.length) processQRImage(e.target.files[0]);
+            fileInput.value = '';
+        });
+    };
+
+    // ==========================================
+    // History (moved inside handler — fixes scope for showMessage)
+    // ==========================================
+    const addToHistory = (type, content) => {
+        try {
+            let history = JSON.parse(localStorage.getItem('devtools_history') || '[]');
+            history.unshift({
+                id: Date.now(),
+                type: type,
+                content: content,
+                timestamp: new Date().toISOString()
+            });
+            if (history.length > 50) history = history.slice(0, 50);
+            localStorage.setItem('devtools_history', JSON.stringify(history));
+            Logger.info('Histórico atualizado', { type, entriesCount: history.length });
+        } catch (e) {
+            Logger.error('Erro ao adicionar ao histórico', { error: e.message });
+        }
+    };
+
+    const loadHistory = () => {
+        try {
+            return JSON.parse(localStorage.getItem('devtools_history') || '[]');
+        } catch (e) {
+            Logger.error('Erro ao carregar histórico', { error: e.message });
+            return [];
+        }
+    };
+
+    const clearHistory = () => {
+        localStorage.removeItem('devtools_history');
+        Logger.info('Histórico limpo');
+        showMessage('history_msg', 'Histórico limpo com sucesso!', 'success');
+    };
+
+    const displayHistory = () => {
+        const historyList = document.getElementById('history_list');
+        const history = loadHistory();
+
+        if (history.length === 0) {
+            historyList.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 1rem;">Nenhuma entrada no histórico</p>';
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem;';
+
+        history.forEach(entry => {
+            const date = new Date(entry.timestamp);
+            const formattedDate = date.toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            let typeLabel = 'Entrada';
+            if (entry.type === 'text_qr') typeLabel = 'QR Code Gerado';
+            else if (entry.type === 'text_qr_read') typeLabel = 'QR Code Lido';
+
+            const displayContent = entry.content.length > 100
+                ? entry.content.substring(0, 100) + '...'
+                : entry.content;
+
+            const card = document.createElement('div');
+            card.style.cssText = 'background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; font-size: 0.9rem;';
+
+            const header = document.createElement('div');
+            header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;';
+
+            const typeSpan = document.createElement('span');
+            typeSpan.style.cssText = 'font-weight: 600; color: var(--primary);';
+            typeSpan.textContent = typeLabel;
+
+            const dateSpan = document.createElement('span');
+            dateSpan.style.cssText = 'font-size: 0.8rem; color: var(--text-muted);';
+            dateSpan.textContent = formattedDate;
+
+            const contentP = document.createElement('p');
+            contentP.style.cssText = 'margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+            contentP.textContent = displayContent; // textContent = safe, no XSS
+
+            header.appendChild(typeSpan);
+            header.appendChild(dateSpan);
+            card.appendChild(header);
+            card.appendChild(contentP);
+            container.appendChild(card);
+        });
+
+        historyList.innerHTML = '';
+        historyList.appendChild(container);
+    };
+
+    const initHistory = () => {
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            if (item.getAttribute('data-target') === 'view_history') {
+                item.addEventListener('click', () => displayHistory());
+            }
+        });
+
+        const clearBtn = document.querySelector('.clear-btn[data-target="history_list"]');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                clearHistory();
+                displayHistory();
+            });
+        }
+    };
+
     // Init All
     initBase64Image();
     initTextBase64();
@@ -931,318 +1227,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initSQL();
     initRegex();
     initXML();
-    initTextQR(); // Nova funcionalidade de texto para QR Code
-    initHistory(); // Funcionalidade de histórico
+    initTextQR();
+    initHistory();
+
+    Logger.info('Canivete Suíço Dev initialized', { tools: 18 });
 
     // Set initially active view's title
     const activeNav = document.querySelector('.nav-item.active');
-    if(activeNav && mainTitle) mainTitle.textContent = activeNav.textContent.trim();
+    if (activeNav && mainTitle) mainTitle.textContent = activeNav.textContent.trim();
 });
-
-/**
- * Tool: Texto para QR Code
- */
-const initTextQR = () => {
-    const textInput = document.getElementById('text_qr_input');
-    const canvasContainer = document.getElementById('text_qr_canvas_container');
-    const fileInput = document.getElementById('text_qr_file');
-
-    // Limpa o cache quando o botão Limpar é acionado
-    canvasContainer.addEventListener('cleared', () => {
-        fileInput.value = '';
-        canvasContainer.innerHTML = '';
-        canvasContainer.classList.add('empty');
-    });
-
-    // Gera QR Code ao digitar (com delay para evitar processamento excessivo)
-    let typingTimer;
-    textInput.addEventListener('input', () => {
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => {
-            if(textInput.value.trim()) {
-                generateQRCodeFromText();
-            } else {
-                canvasContainer.innerHTML = '';
-                canvasContainer.classList.add('empty');
-            }
-        }, 500); // Delay de 500ms
-    });
-
-    function generateQRCodeFromText() {
-        const text = textInput.value.trim();
-        if (!text) return;
-
-        // Verifica se o texto é muito longo para um QR Code (limitação do formato)
-        if (text.length > 4000) {
-            showMessage('text_qr_msg', 'Texto muito longo para QR Code. Limite de 4000 caracteres.', 'error');
-            canvasContainer.innerHTML = '';
-            canvasContainer.classList.add('empty');
-            return;
-        }
-
-        try {
-            // Limpa o container
-            canvasContainer.innerHTML = '';
-            canvasContainer.classList.remove('empty');
-
-            // Gera o QR Code diretamente no canvas do DOM para evitar problemas de renderização
-            const canvas = document.createElement('canvas');
-            new QRCode(canvas, {
-                text: text,
-                width: 200,
-                height: 200,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-
-            canvasContainer.appendChild(canvas);
-            showMessage('text_qr_msg', 'QR Code gerado com sucesso!');
-
-            // Adiciona ao histórico
-            addToHistory('text_qr', text);
-        } catch (error) {
-            console.error('Erro ao gerar QR Code:', error);
-            showMessage('text_qr_msg', 'Erro ao gerar QR Code. Tente novamente.', 'error');
-            canvasContainer.innerHTML = '';
-            canvasContainer.classList.add('empty');
-        }
-    }
-
-    // Processa imagem para leitura de QR Code
-    const processQRImage = (file) => {
-        if(!file) return showMessage('text_qr_msg', 'Nenhum arquivo selecionado', 'error');
-        if(typeof jsQR === 'undefined') return showMessage('text_qr_msg', 'Erro: Biblioteca jsQR não foi carregada. Verifique o arquivo ./libs/jsQR.min.js', 'error');
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-
-                // Evita imagens gigantes travando o jsQR
-                const MAX_SIZE = 1000;
-                let w = img.width;
-                let h = img.height;
-                if (w > MAX_SIZE || h > MAX_SIZE) {
-                    const r = Math.min(MAX_SIZE / w, MAX_SIZE / h);
-                    w = w * r; h = h * r;
-                }
-                canvas.width = w; canvas.height = h;
-
-                // Preenche fundo branco (evita problemas com PNGs transparentes ficando pretos)
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, w, h);
-                ctx.drawImage(img, 0, 0, w, h);
-
-                const imageData = ctx.getImageData(0, 0, w, h);
-                let code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
-
-                // Fallback de Binarização para QR Codes coloridos/gradientes
-                if (!code) {
-                    const thresholds = [200, 160, 220, 120];
-                    for (let t of thresholds) {
-                        const imgDataCopy = ctx.getImageData(0, 0, w, h);
-                        const data = imgDataCopy.data;
-                        for (let i = 0; i < data.length; i += 4) {
-                            const luminance = (0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2]);
-                            const val = luminance > t ? 255 : 0;
-                            data[i] = data[i+1] = data[i+2] = val;
-                        }
-                        code = jsQR(imgDataCopy.data, imgDataCopy.width, imgDataCopy.height, { inversionAttempts: "attemptBoth" });
-                        if (code) break;
-                    }
-                }
-
-                canvasContainer.innerHTML = '';
-                canvasContainer.classList.remove('empty');
-                img.style.maxWidth = '100%';
-                img.style.maxHeight = '100%';
-                img.style.objectFit = 'contain';
-                canvasContainer.appendChild(img);
-
-                if(code) {
-                    textInput.value = code.data;
-                    showMessage('text_qr_msg', 'QR Code lido com sucesso!');
-
-                    // Adiciona ao histórico
-                    addToHistory('text_qr_read', code.data);
-                } else {
-                    showMessage('text_qr_msg', 'QR Code ilegível. Tente aumentar o contraste da imagem.', 'error');
-                }
-            };
-            img.src = dataUrl;
-        };
-        reader.readAsDataURL(file);
-    };
-
-    // Click para abrir o diálogo de arquivo
-    canvasContainer.addEventListener('click', () => fileInput.click());
-    canvasContainer.style.cursor = 'pointer';
-
-    // Dropzone para leitura de QR Code
-    canvasContainer.addEventListener('dragover', e => {
-        e.preventDefault();
-        canvasContainer.style.borderColor = 'var(--primary)';
-        canvasContainer.style.backgroundColor = 'rgba(59, 130, 246, 0.05)';
-    });
-    canvasContainer.addEventListener('dragleave', () => {
-        canvasContainer.style.borderColor = '';
-        canvasContainer.style.backgroundColor = '';
-    });
-    canvasContainer.addEventListener('drop', e => {
-        e.preventDefault();
-        canvasContainer.style.borderColor = '';
-        canvasContainer.style.backgroundColor = '';
-        if(e.dataTransfer.files.length) processQRImage(e.dataTransfer.files[0]);
-    });
-
-    // Processa o arquivo selecionado
-    fileInput.addEventListener('change', e => {
-        if(e.target.files.length) processQRImage(e.target.files[0]);
-        fileInput.value = '';
-    });
-};
-
-// ==========================================
-// Funcionalidade de Histórico
-// ==========================================
-
-/**
- * Adiciona uma entrada ao histórico
- * @param {string} type - Tipo de entrada (text_qr, text_qr_read, base64_img)
- * @param {string} content - Conteúdo da entrada
- */
-const addToHistory = (type, content) => {
-    try {
-        // Obter histórico existente
-        let history = JSON.parse(localStorage.getItem('devtools_history') || '[]');
-
-        // Criar nova entrada
-        const entry = {
-            id: Date.now(),
-            type: type,
-            content: content,
-            timestamp: new Date().toISOString()
-        };
-
-        // Adicionar ao início do array
-        history.unshift(entry);
-
-        // Manter apenas as últimas 50 entradas
-        if (history.length > 50) {
-            history = history.slice(0, 50);
-        }
-
-        // Salvar de volta no localStorage
-        localStorage.setItem('devtools_history', JSON.stringify(history));
-    } catch (e) {
-        console.error('Erro ao adicionar ao histórico:', e);
-    }
-};
-
-/**
- * Carrega o histórico do localStorage
- * @returns {Array} Array com as entradas do histórico
- */
-const loadHistory = () => {
-    try {
-        return JSON.parse(localStorage.getItem('devtools_history') || '[]');
-    } catch (e) {
-        console.error('Erro ao carregar histórico:', e);
-        return [];
-    }
-};
-
-/**
- * Limpa todo o histórico
- */
-const clearHistory = () => {
-    localStorage.removeItem('devtools_history');
-    showMessage('history_msg', 'Histórico limpo com sucesso!', 'success');
-};
-
-/**
- * Inicializa a funcionalidade de histórico
- */
-const initHistory = () => {
-    const historyList = document.getElementById('history_list');
-
-    // Carrega e exibe o histórico quando a aba for aberta
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        if (item.getAttribute('data-target') === 'view_history') {
-            item.addEventListener('click', () => {
-                displayHistory();
-            });
-        }
-    });
-
-    // Adiciona evento de limpeza no botão
-    const clearBtn = document.querySelector('.clear-btn[data-target="history_list"]');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            clearHistory();
-            displayHistory();
-        });
-    }
-};
-
-/**
- * Exibe o histórico na interface
- */
-const displayHistory = () => {
-    const historyList = document.getElementById('history_list');
-    const history = loadHistory();
-
-    if (history.length === 0) {
-        historyList.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 1rem;">Nenhuma entrada no histórico</p>';
-        return;
-    }
-
-    let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
-
-    history.forEach(entry => {
-        const date = new Date(entry.timestamp);
-        const formattedDate = date.toLocaleString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
-        let typeLabel = '';
-        switch(entry.type) {
-            case 'text_qr':
-                typeLabel = 'QR Code Gerado';
-                break;
-            case 'text_qr_read':
-                typeLabel = 'QR Code Lido';
-                break;
-            default:
-                typeLabel = 'Entrada';
-        }
-
-        // Limitar o conteúdo exibido
-        let displayContent = entry.content;
-        if (displayContent.length > 100) {
-            displayContent = displayContent.substring(0, 100) + '...';
-        }
-
-        html += `
-            <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; font-size: 0.9rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                    <span style="font-weight: 600; color: var(--primary);">${typeLabel}</span>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">${formattedDate}</span>
-                </div>
-                <p style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayContent}</p>
-            </div>
-        `;
-    });
-
-    html += '</div>';
-    historyList.innerHTML = html;
-};
