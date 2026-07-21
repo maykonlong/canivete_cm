@@ -1007,23 +1007,46 @@
             <div class="cert-panel" id="cert_convert">
                 <div class="panel">
                     <div class="panel-header">
-                        <h3>Entrada (PEM)</h3>
+                        <h3>Entrada</h3>
                         <div class="panel-toolbar">
                             <button class="btn-toolbar upload-btn" data-target="convert_input"><svg><use href="#icon-upload"/></svg></button>
                             <button class="btn-toolbar copy-btn" data-target="convert_input"><svg><use href="#icon-copy"/></svg></button>
                             <button class="btn-toolbar clear-btn" data-target="convert_input"><svg><use href="#icon-clear"/></svg></button>
                         </div>
                     </div>
-                    <div class="panel-content"><textarea id="convert_input" placeholder="Cole o certificado ou chave em formato PEM"></textarea></div>
+                    <div class="panel-content"><textarea id="convert_input" placeholder="Cole o certificado, chave ou arquivo DER em Base64"></textarea></div>
                 </div>
-                <div class="actions-center" style="flex-wrap:wrap;gap:8px;">
-                    <button class="btn btn-primary" id="btn_pem_to_der">PEM → DER</button>
-                    <button class="btn btn-secondary" id="btn_extract_pubkey">Extrair Chave Pública</button>
-                    <button class="btn btn-secondary" id="btn_remove_key_pass">Remover Senha da Key</button>
+                <div class="panel" style="min-height:auto;">
+                    <div class="panel-header"><h3>Tipo de Conversão</h3></div>
+                    <div class="panel-content">
+                        <select id="convert_type">
+                            <option value="pem_to_der">Cert PEM → DER (.cer)</option>
+                            <option value="der_to_pem">DER (Base64) → Cert PEM</option>
+                            <option value="extract_pubkey">Extrair Chave Pública (PEM)</option>
+                            <option value="key_pkcs1_to_pkcs8">Key PKCS#1 → PKCS#8</option>
+                            <option value="key_pkcs8_to_pkcs1">Key PKCS#8 → PKCS#1</option>
+                            <option value="remove_key_pass">Remover Senha da Key</option>
+                            <option value="cert_to_text">Extrair Texto (Subject, Issuer, Validade)</option>
+                            <option value="pem_to_pfx">Cert + Key → PFX/PKCS#12</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="panel" id="convert_pass_panel" style="display:none;">
-                    <div class="panel-header"><h3>Senha da Chave Privada</h3></div>
-                    <div class="panel-content"><input type="password" id="convert_key_pass" placeholder="Digite a senha da chave" style="width:100%;padding:0.5rem;"></div>
+                    <div class="panel-header"><h3>Senha</h3></div>
+                    <div class="panel-content"><input type="password" id="convert_key_pass" placeholder="Digite a senha" style="width:100%;padding:0.5rem;"></div>
+                </div>
+                <div class="panel" id="convert_extra_panel" style="display:none;">
+                    <div class="panel-header">
+                        <h3>Arquivo Adicional (para PFX: a Chave Privada)</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="convert_extra"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="convert_extra"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="convert_extra" placeholder="Cole aqui o segundo arquivo (ex: chave privada PEM para gerar PFX)"></textarea></div>
+                </div>
+                <div class="actions-center">
+                    <button class="btn btn-primary" id="btn_convert_exec" style="width:100%;max-width:400px;">Executar Conversão</button>
                 </div>
                 <div class="panel">
                     <div class="panel-header">
@@ -1055,10 +1078,20 @@
                     <div class="panel-header"><h3>Senha do PFX</h3></div>
                     <div class="panel-content"><input type="password" id="pfx_pass" placeholder="Senha do arquivo PFX" style="width:100%;padding:0.5rem;"></div>
                 </div>
+                <div class="panel" style="min-height:auto;">
+                    <div class="panel-header"><h3>O que extrair</h3></div>
+                    <div class="panel-content">
+                        <select id="pfx_extract_type">
+                            <option value="cert">Certificado (.crt PEM)</option>
+                            <option value="key">Chave Privada (.key PEM)</option>
+                            <option value="both">Certificado + Chave (ambos)</option>
+                            <option value="chain">Cadeia Completa (todos os certs)</option>
+                            <option value="info">Informações do PFX (Subject, Issuer, Serial)</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="actions-center">
-                    <button class="btn btn-primary" id="btn_pfx_cert">Extrair Certificado (.crt)</button>
-                    <button class="btn btn-secondary" id="btn_pfx_key">Extrair Chave (.key)</button>
-                    <button class="btn btn-secondary" id="btn_pfx_both">Extrair Ambos</button>
+                    <button class="btn btn-primary" id="btn_pfx_exec" style="width:100%;max-width:400px;">Extrair</button>
                 </div>
                 <div class="panel">
                     <div class="panel-header">

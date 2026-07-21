@@ -1220,16 +1220,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Show/hide password field for key decryption
-        const btnRemoveKeyPass = document.getElementById('btn_remove_key_pass');
-        const passPanel = document.getElementById('convert_pass_panel');
-        if (btnRemoveKeyPass && passPanel) {
-            btnRemoveKeyPass.addEventListener('click', () => {
-                passPanel.style.display = passPanel.style.display === 'none' ? 'block' : 'none';
-                handleRemoveKeyPass();
-            });
-        }
-
         // Helper: buffer to hex
         const bufToHex = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(':');
         const bufToHexClean = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -1386,162 +1376,250 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // ===== Tab 3: Conversions =====
-        // PEM → DER (download)
-        document.getElementById('btn_pem_to_der').addEventListener('click', () => {
-            const pem = document.getElementById('convert_input').value.trim();
-            if (!pem) return showMessage('certs_msg', 'Cole o conteúdo PEM primeiro', 'error');
+        // ===== Tab 3: Conversions (unified via select) =====
+        const convertType = document.getElementById('convert_type');
+        const passPanel = document.getElementById('convert_pass_panel');
+        const extraPanel = document.getElementById('convert_extra_panel');
+
+        // Show/hide extra panels based on conversion type
+        convertType.addEventListener('change', () => {
+            const v = convertType.value;
+            passPanel.style.display = (v === 'remove_key_pass' || v === 'pem_to_pfx') ? 'block' : 'none';
+            extraPanel.style.display = v === 'pem_to_pfx' ? 'block' : 'none';
+            if (v === 'pem_to_pfx') {
+                passPanel.querySelector('h3').textContent = 'Senha para o PFX';
+                passPanel.querySelector('input').placeholder = 'Senha para proteger o PFX';
+            } else if (v === 'remove_key_pass') {
+                passPanel.querySelector('h3').textContent = 'Senha da Chave Privada';
+                passPanel.querySelector('input').placeholder = 'Digite a senha da chave';
+            }
+        });
+
+        document.getElementById('btn_convert_exec').addEventListener('click', async () => {
+            const input = document.getElementById('convert_input').value.trim();
+            const type = convertType.value;
+            const output = document.getElementById('convert_output');
+
+            if (!input && type !== 'pem_to_pfx') return showMessage('certs_msg', 'Cole o conteúdo na entrada', 'error');
+
             try {
-                // Try cert first, then key
-                let asn1;
-                if (pem.includes('BEGIN CERTIFICATE')) {
-                    asn1 = forge.pki.certificateToAsn1(forge.pki.certificateFromPem(pem));
-                } else if (pem.includes('BEGIN RSA PRIVATE KEY') || pem.includes('BEGIN PRIVATE KEY') || pem.includes('BEGIN ENCRYPTED PRIVATE KEY')) {
-                    showMessage('certs_msg', 'Chave privada já pode estar em DER. Use apenas com certificados.', 'error');
-                    return;
-                } else {
-                    showMessage('certs_msg', 'Formato PEM não reconhecido', 'error');
-                    return;
+                switch (type) {
+                    case 'pem_to_der': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const asn1 = forge.pki.certificateToAsn1(forge.pki.certificateFromPem(input));
+                        const derBytes = forge.asn1.toDer(asn1).getBytes();
+                        const b64 = forge.util.encode64(derBytes);
+                        output.value = `Formato DER (Base64):\n${b64}\n\nTamanho: ${derBytes.length} bytes`;
+                        // Auto-download
+                        const arr = new Uint8Array(derBytes.length);
+                        for (let i = 0; i < derBytes.length; i++) arr[i] = derBytes.charCodeAt(i);
+                        const blob = new Blob([arr], { type: 'application/octet-stream' });
+                        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'certificado.cer'; a.click(); URL.revokeObjectURL(a.href);
+                        showMessage('certs_msg', 'Certificado convertido para DER e download iniciado!');
+                        break;
+                    }
+                    case 'der_to_pem': {
+                        const bytes = forge.util.decode64(input.replace(/\s/g, ''));
+                        const asn1 = forge.asn1.fromDer(bytes);
+                        const cert = forge.pki.certificateFromAsn1(asn1);
+                        output.value = forge.pki.certificateToPem(cert);
+                        showMessage('certs_msg', 'DER convertido para PEM!');
+                        break;
+                    }
+                    case 'extract_pubkey': {
+                        let pubKeyPem;
+                        if (input.includes('BEGIN CERTIFICATE')) {
+                            const cert = forge.pki.certificateFromPem(input);
+                            pubKeyPem = forge.pki.publicKeyToPem(cert.publicKey);
+                        } else if (input.includes('PRIVATE KEY')) {
+                            const key = forge.pki.privateKeyFromPem(input);
+                            pubKeyPem = forge.pki.publicKeyToPem(forge.pki.setRsaPublicKey(key.n, key.e));
+                        } else { return showMessage('certs_msg', 'Formato não reconhecido', 'error'); }
+                        const spkiDer = extractSpkiDer(input, input.includes('PRIVATE KEY'));
+                        const hash = spkiDer ? await getPublicKeyHash(spkiDer) : 'N/A';
+                        output.value = `${pubKeyPem}\n\nSHA-256 da Chave Pública:\n${hash}`;
+                        showMessage('certs_msg', 'Chave pública extraída!');
+                        break;
+                    }
+                    case 'key_pkcs1_to_pkcs8': {
+                        if (!input.includes('RSA PRIVATE KEY')) return showMessage('certs_msg', 'Cole uma chave no formato PKCS#1 (BEGIN RSA PRIVATE KEY)', 'error');
+                        const key = forge.pki.privateKeyFromPem(input);
+                        output.value = forge.pki.privateKeyToPem(key); // node-forge stores as PKCS#8 by default
+                        showMessage('certs_msg', 'Chave convertida para PKCS#8!');
+                        break;
+                    }
+                    case 'key_pkcs8_to_pkcs1': {
+                        if (!input.includes('PRIVATE KEY') || input.includes('RSA PRIVATE KEY')) return showMessage('certs_msg', 'Cole uma chave no formato PKCS#8 (BEGIN PRIVATE KEY)', 'error');
+                        const key = forge.pki.privateKeyFromPem(input);
+                        // Manual PKCS#1 PEM
+                        const rsaAsn1 = forge.pki.privateKeyToAsn1(key);
+                        const rsaDer = forge.asn1.toDer(rsaAsn1).getBytes();
+                        output.value = '-----BEGIN RSA PRIVATE KEY-----\n' + forge.util.encode64(rsaDer).match(/.{1,64}/g).join('\n') + '\n-----END RSA PRIVATE KEY-----';
+                        showMessage('certs_msg', 'Chave convertida para PKCS#1!');
+                        break;
+                    }
+                    case 'remove_key_pass': {
+                        const pass = document.getElementById('convert_key_pass').value;
+                        if (!input.includes('ENCRYPTED')) return showMessage('certs_msg', 'Esta chave não parece estar protegida por senha', 'error');
+                        if (!pass) return showMessage('certs_msg', 'Digite a senha da chave privada', 'error');
+                        const decryptedKey = forge.pki.decryptRsaPrivateKey(input, pass);
+                        if (!decryptedKey) return showMessage('certs_msg', 'Senha incorreta ou formato inválido', 'error');
+                        output.value = forge.pki.privateKeyToPem(decryptedKey);
+                        showMessage('certs_msg', 'Senha removida com sucesso!');
+                        break;
+                    }
+                    case 'cert_to_text': {
+                        if (!input.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole um certificado PEM', 'error');
+                        const cert = forge.pki.certificateFromPem(input);
+                        const issuer = cert.issuer.getField('CN')?.value || 'N/A';
+                        const subject = cert.subject.getField('CN')?.value || 'N/A';
+                        const serial = cert.serialNumber;
+                        const nb = cert.validity.notBefore.toLocaleString('pt-BR');
+                        const na = cert.validity.notAfter.toLocaleString('pt-BR');
+                        const days = Math.ceil((cert.validity.notAfter - new Date()) / 86400000);
+                        let txt = `Subject: ${subject}\nIssuer: ${issuer}\nSerial: ${serial}\nVálido De: ${nb}\nVálido Até: ${na}\nDias restantes: ${days}\n\n`;
+                        // SANs
+                        try {
+                            const sanExt = cert.getExtension('subjectAltName');
+                            if (sanExt && sanExt.altNames) {
+                                txt += 'Subject Alt Names (SAN):\n';
+                                sanExt.altNames.forEach(n => { txt += `  ${n.type === 2 ? 'DNS' : n.type === 7 ? 'IP' : n.type}: ${n.value || n.ip}\n`; });
+                            }
+                        } catch (_) {}
+                        output.value = txt;
+                        showMessage('certs_msg', 'Informações extraídas!');
+                        break;
+                    }
+                    case 'pem_to_pfx': {
+                        const extra = document.getElementById('convert_extra').value.trim();
+                        const pass = document.getElementById('convert_key_pass').value;
+                        if (!input.includes('BEGIN CERTIFICATE') && !extra.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Cole o certificado PEM na entrada ou no campo adicional', 'error');
+                        if (!input.includes('PRIVATE KEY') && !extra.includes('PRIVATE KEY')) return showMessage('certs_msg', 'Cole a chave privada PEM na entrada ou no campo adicional', 'error');
+                        const certPem = input.includes('CERTIFICATE') ? input : extra;
+                        const keyPem = input.includes('PRIVATE KEY') ? input : extra;
+                        const cert = forge.pki.certificateFromPem(certPem);
+                        const key = forge.pki.privateKeyFromPem(keyPem);
+                        const p12Asn1 = forge.pkcs12.toPkcs12Asn1(key, [cert], pass || '', { algorithm: '3des' });
+                        const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+                        const p12B64 = forge.util.encode64(p12Der);
+                        output.value = p12B64;
+                        // Auto-download
+                        const arr = new Uint8Array(p12Der.length);
+                        for (let i = 0; i < p12Der.length; i++) arr[i] = p12Der.charCodeAt(i);
+                        const blob = new Blob([arr], { type: 'application/x-pkcs12' });
+                        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'certificado.pfx'; a.click(); URL.revokeObjectURL(a.href);
+                        showMessage('certs_msg', 'PFX gerado e download iniciado!');
+                        break;
+                    }
+                    default:
+                        showMessage('certs_msg', 'Selecione um tipo de conversão', 'error');
                 }
-                const derBytes = forge.asn1.toDer(asn1).getBytes();
-                // Convert to base64 for display
-                const b64 = forge.util.encode64(derBytes);
-                document.getElementById('convert_output').value = `Formato DER (Base64):\n${b64}\n\nTamanho: ${derBytes.length} bytes\nUse o botão Download para salvar como .der/.cer`;
-                // Create download
-                const arr = new Uint8Array(derBytes.length);
-                for (let i = 0; i < derBytes.length; i++) arr[i] = derBytes.charCodeAt(i);
-                const blob = new Blob([arr], { type: 'application/octet-stream' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'certificado.cer';
-                a.click();
-                URL.revokeObjectURL(a.href);
-                showMessage('certs_msg', 'Certificado convertido para DER e download iniciado!');
             } catch (e) {
+                Logger.error('Erro na conversão', { error: e.message });
                 showMessage('certs_msg', 'Erro: ' + e.message, 'error');
             }
         });
 
-        // Extract public key
-        document.getElementById('btn_extract_pubkey').addEventListener('click', async () => {
-            const pem = document.getElementById('convert_input').value.trim();
-            if (!pem) return showMessage('certs_msg', 'Cole o certificado ou chave primeiro', 'error');
-            try {
-                let pubKeyPem;
-                if (pem.includes('BEGIN CERTIFICATE')) {
-                    const cert = forge.pki.certificateFromPem(pem);
-                    pubKeyPem = forge.pki.publicKeyToPem(cert.publicKey);
-                } else if (pem.includes('RSA PRIVATE KEY') || pem.includes('BEGIN PRIVATE KEY')) {
-                    const key = forge.pki.privateKeyFromPem(pem);
-                    const pubKey = forge.pki.setRsaPublicKey(key.n, key.e);
-                    pubKeyPem = forge.pki.publicKeyToPem(pubKey);
-                } else {
-                    showMessage('certs_msg', 'Formato não reconhecido', 'error');
-                    return;
-                }
-
-                // Compute SHA-256 of SPKI
-                const spkiDer = extractSpkiDer(pem, pem.includes('PRIVATE KEY'));
-                const hash = spkiDer ? await getPublicKeyHash(spkiDer) : 'N/A';
-
-                document.getElementById('convert_output').value = `${pubKeyPem}\n\nSHA-256 da Chave Pública:\n${hash}`;
-                showMessage('certs_msg', 'Chave pública extraída!');
-            } catch (e) {
-                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
-            }
-        });
-
-        // Remove key password
-        function handleRemoveKeyPass() {
-            const pem = document.getElementById('convert_input').value.trim();
-            const pass = document.getElementById('convert_key_pass').value;
-            if (!pem) return showMessage('certs_msg', 'Cole a chave privada com senha primeiro', 'error');
-            if (!pem.includes('ENCRYPTED')) {
-                showMessage('certs_msg', 'Esta chave não parece estar protegida por senha (não contém ENCRYPTED)', 'error');
-                return;
-            }
-            if (!pass) {
-                showMessage('certs_msg', 'Digite a senha da chave privada', 'error');
-                return;
-            }
-            try {
-                const decryptedKey = forge.pki.decryptRsaPrivateKey(pem, pass);
-                if (!decryptedKey) {
-                    showMessage('certs_msg', 'Senha incorreta ou formato inválido', 'error');
-                    return;
-                }
-                const unencryptedPem = forge.pki.privateKeyToPem(decryptedKey);
-                document.getElementById('convert_output').value = unencryptedPem;
-                showMessage('certs_msg', 'Senha removida com sucesso!');
-            } catch (e) {
-                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
-            }
-        }
-
-        // ===== Tab 4: PFX Extraction =====
+        // ===== Tab 4: PFX Extraction (unified via select) =====
         const readPfxInput = () => {
             const raw = document.getElementById('pfx_input').value.trim();
             if (!raw) return null;
-            // Accept base64 or raw binary
-            try {
-                const bytes = forge.util.decode64(raw);
-                return forge.asn1.fromDer(bytes);
-            } catch (_) {
-                // Maybe it's raw DER
-                try {
-                    return forge.asn1.fromDer(raw);
-                } catch (__) {
-                    return null;
-                }
-            }
+            try { return forge.asn1.fromDer(forge.util.decode64(raw)); } catch (_) {}
+            try { return forge.asn1.fromDer(raw); } catch (_) {}
+            return null;
         };
 
-        const extractFromPfx = (extractCerts, extractKey) => {
+        document.getElementById('btn_pfx_exec').addEventListener('click', () => {
             const pass = document.getElementById('pfx_pass').value;
+            const extractType = document.getElementById('pfx_extract_type').value;
             const asn1 = readPfxInput();
             if (!asn1) return showMessage('certs_msg', 'PFX inválido ou vazio. Cole em Base64.', 'error');
 
             try {
                 const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, pass);
 
-                if (extractCerts) {
-                    const bags = p12.getBags({ bagType: forge.pki.oids.certBag });
-                    const certs = bags[forge.pki.oids.certBag];
-                    if (certs && certs.length > 0) {
-                        const certPem = forge.pki.certificateToPem(certs[0].cert);
-                        document.getElementById('pfx_cert_output').value = certPem;
-                    } else {
-                        document.getElementById('pfx_cert_output').value = 'Nenhum certificado encontrado no PFX.';
-                    }
-                }
+                // Get bags
+                const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
+                const certs = certBags[forge.pki.oids.certBag] || [];
+                const keyBagsShrouded = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+                const keyBagsPlain = p12.getBags({ bagType: forge.pki.oids.keyBag });
+                const shroudedKeys = keyBagsShrouded[forge.pki.oids.pkcs8ShroudedKeyBag] || [];
+                const plainKeys = keyBagsPlain[forge.pki.oids.keyBag] || [];
 
-                if (extractKey) {
-                    const bags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
-                    const keyBags = bags[forge.pki.oids.pkcs8ShroudedKeyBag];
-                    let keyPem = '';
-                    if (keyBags && keyBags.length > 0) {
-                        keyPem = forge.pki.privateKeyToPem(keyBags[0].key);
-                    } else {
-                        // Try unencrypted key bag
-                        const bags2 = p12.getBags({ bagType: forge.pki.oids.keyBag });
-                        const keyBags2 = bags2[forge.pki.oids.keyBag];
-                        if (keyBags2 && keyBags2.length > 0) {
-                            keyPem = forge.pki.privateKeyToPem(keyBags2[0].key);
+                switch (extractType) {
+                    case 'cert': {
+                        if (certs.length > 0) {
+                            document.getElementById('pfx_cert_output').value = forge.pki.certificateToPem(certs[0].cert);
+                            document.getElementById('pfx_key_output').value = '';
+                        } else {
+                            showMessage('certs_msg', 'Nenhum certificado encontrado no PFX', 'error');
                         }
+                        break;
                     }
-                    document.getElementById('pfx_key_output').value = keyPem || 'Nenhuma chave privada encontrada no PFX.';
+                    case 'key': {
+                        const key = shroudedKeys[0]?.key || plainKeys[0]?.key;
+                        if (key) {
+                            document.getElementById('pfx_key_output').value = forge.pki.privateKeyToPem(key);
+                            document.getElementById('pfx_cert_output').value = '';
+                        } else {
+                            showMessage('certs_msg', 'Nenhuma chave privada encontrada no PFX', 'error');
+                        }
+                        break;
+                    }
+                    case 'both': {
+                        if (certs.length > 0) {
+                            document.getElementById('pfx_cert_output').value = forge.pki.certificateToPem(certs[0].cert);
+                        } else {
+                            document.getElementById('pfx_cert_output').value = 'Nenhum certificado encontrado.';
+                        }
+                        const key = shroudedKeys[0]?.key || plainKeys[0]?.key;
+                        document.getElementById('pfx_key_output').value = key ? forge.pki.privateKeyToPem(key) : 'Nenhuma chave privada encontrada.';
+                        break;
+                    }
+                    case 'chain': {
+                        let chainPem = '';
+                        certs.forEach((bag, i) => {
+                            const c = bag.cert;
+                            const cn = c.subject.getField('CN')?.value || 'N/A';
+                            const issuerCn = c.issuer.getField('CN')?.value || 'N/A';
+                            chainPem += `══════ Certificado ${i + 1} ══════\n`;
+                            chainPem += `Subject: ${cn}\nIssuer: ${issuerCn}\nSerial: ${c.serialNumber}\n\n`;
+                            chainPem += forge.pki.certificateToPem(c) + '\n\n';
+                        });
+                        document.getElementById('pfx_cert_output').value = chainPem || 'Nenhum certificado encontrado.';
+                        const key = shroudedKeys[0]?.key || plainKeys[0]?.key;
+                        document.getElementById('pfx_key_output').value = key ? forge.pki.privateKeyToPem(key) : 'Nenhuma chave privada encontrada.';
+                        break;
+                    }
+                    case 'info': {
+                        let info = `═══════════════════════════════════════════\n`;
+                        info += `  INFORMAÇÕES DO PFX/PKCS#12\n`;
+                        info += `═══════════════════════════════════════════\n\n`;
+                        info += `Certificados encontrados: ${certs.length}\n`;
+                        info += `Chaves encontradas: ${shroudedKeys.length + plainKeys.length}\n\n`;
+                        certs.forEach((bag, i) => {
+                            const c = bag.cert;
+                            const nb = c.validity.notBefore.toLocaleString('pt-BR');
+                            const na = c.validity.notAfter.toLocaleString('pt-BR');
+                            const days = Math.ceil((c.validity.notAfter - new Date()) / 86400000);
+                            info += `── Certificado ${i + 1} ──\n`;
+                            info += `  Subject: ${c.subject.getField('CN')?.value || 'N/A'}\n`;
+                            info += `  Issuer:  ${c.issuer.getField('CN')?.value || 'N/A'}\n`;
+                            info += `  Serial:  ${c.serialNumber}\n`;
+                            info += `  Válido:  ${nb} → ${na}\n`;
+                            info += `  Status:  ${days > 0 ? '✅ Válido (' + days + ' dias)' : '❌ Expirado'}\n\n`;
+                        });
+                        document.getElementById('pfx_cert_output').value = info;
+                        document.getElementById('pfx_key_output').value = '';
+                        break;
+                    }
                 }
-
                 showMessage('certs_msg', 'Extração concluída!');
             } catch (e) {
                 Logger.error('Erro ao extrair PFX', { error: e.message });
                 showMessage('certs_msg', 'Erro: ' + e.message + (e.message.includes('password') ? ' — Verifique a senha.' : ''), 'error');
             }
-        };
-
-        document.getElementById('btn_pfx_cert').addEventListener('click', () => extractFromPfx(true, false));
-        document.getElementById('btn_pfx_key').addEventListener('click', () => extractFromPfx(false, true));
-        document.getElementById('btn_pfx_both').addEventListener('click', () => extractFromPfx(true, true));
+        });
 
         Logger.info('Certificados SSL tool initialized');
     };
