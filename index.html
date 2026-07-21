@@ -82,6 +82,10 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 Gerador de Hash
             </a>
+            <a href="#" class="nav-item" data-target="view_certs">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                Certificados SSL
+            </a>
 
             <div class="nav-category">Dados & Utilities</div>
             <a href="#" class="nav-item" data-target="view_time">
@@ -921,8 +925,120 @@
             <div class="alert" id="xml_msg"></div>
         </section>
 
+    <!-- ==========================================
+         Tool: Certificados SSL
+         ========================================== -->
+    <section class="tool-view" id="view_certs">
+        <h2 class="tool-header">Certificados SSL / OpenSSL</h2>
+        <div class="tool-body">
+
+            <!-- Sub-abas -->
+            <div class="cert-tabs">
+                <button class="cert-tab active" data-tab="cert_info">Informações do Certificado</button>
+                <button class="cert-tab" data-tab="cert_pair">Validar Par (Cert + Key)</button>
+                <button class="cert-tab" data-tab="cert_convert">Conversões</button>
+                <button class="cert-tab" data-tab="cert_pfx">Extrair do PFX</button>
+            </div>
+
+            <!-- Tab 1: Info do Certificado -->
+            <div class="cert-panel active" id="cert_info">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Cole o Certificado (.cer, .crt, .pem)</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="cert_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="cert_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="cert_input" placeholder="-----BEGIN CERTIFICATE-----&#10;MIIDxxxxxxx...&#10;-----END CERTIFICATE-----"></textarea></div>
+                </div>
+                <div class="actions-center">
+                    <button class="btn btn-primary" id="cert_btn_info">Extrair Informações</button>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Resultado</h3></div>
+                    <div class="panel-content"><pre id="cert_info_output" readonly style="min-height:200px;white-space:pre-wrap;font-family:monospace;font-size:0.85rem;padding:0.75rem;overflow:auto;"></pre></div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Validar Par -->
+            <div class="cert-panel" id="cert_pair">
+                <div class="panel">
+                    <div class="panel-header"><h3>Certificado (.cer/.crt/.pem)</h3></div>
+                    <div class="panel-content"><textarea id="pair_cert_input" placeholder="-----BEGIN CERTIFICATE-----&#10;Cole o certificado aqui&#10;-----END CERTIFICATE-----"></textarea></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Chave Privada (.key/.pem)</h3></div>
+                    <div class="panel-content"><textarea id="pair_key_input" placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;Cole a chave privada aqui&#10;-----END RSA PRIVATE KEY-----"></textarea></div>
+                </div>
+                <div class="actions-center">
+                    <button class="btn btn-primary" id="cert_btn_pair">Verificar Par</button>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Resultado</h3></div>
+                    <div class="panel-content"><pre id="cert_pair_output" readonly style="min-height:120px;white-space:pre-wrap;font-family:monospace;font-size:0.85rem;padding:0.75rem;overflow:auto;"></pre></div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Conversões -->
+            <div class="cert-panel" id="cert_convert">
+                <div class="panel">
+                    <div class="panel-header"><h3>Entrada (PEM)</h3></div>
+                    <div class="panel-content"><textarea id="convert_input" placeholder="Cole o certificado ou chave em formato PEM"></textarea></div>
+                </div>
+                <div class="actions-center" style="flex-wrap:wrap;gap:8px;">
+                    <button class="btn btn-primary" id="btn_pem_to_der">PEM → DER</button>
+                    <button class="btn btn-secondary" id="btn_extract_pubkey">Extrair Chave Pública</button>
+                    <button class="btn btn-secondary" id="btn_remove_key_pass">Remover Senha da Key</button>
+                </div>
+                <div class="panel" id="convert_pass_panel" style="display:none;">
+                    <div class="panel-header"><h3>Senha da Chave Privada</h3></div>
+                    <div class="panel-content"><input type="password" id="convert_key_pass" placeholder="Digite a senha da chave" style="width:100%;padding:0.5rem;"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Resultado</h3></div>
+                    <div class="panel-content"><textarea id="convert_output" readonly placeholder="Resultado da conversão..."></textarea></div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Extrair do PFX -->
+            <div class="cert-panel" id="cert_pfx">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Arquivo PFX/PKCS#12</h3>
+                        <div class="panel-toolbar">
+                            <button class="btn-toolbar upload-btn" data-target="pfx_input"><svg><use href="#icon-upload"/></svg></button>
+                            <button class="btn-toolbar clear-btn" data-target="pfx_input"><svg><use href="#icon-clear"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="panel-content"><textarea id="pfx_input" placeholder="Cole o PFX em Base64 (ou use o upload)"></textarea></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Senha do PFX</h3></div>
+                    <div class="panel-content"><input type="password" id="pfx_pass" placeholder="Senha do arquivo PFX" style="width:100%;padding:0.5rem;"></div>
+                </div>
+                <div class="actions-center">
+                    <button class="btn btn-primary" id="btn_pfx_cert">Extrair Certificado (.crt)</button>
+                    <button class="btn btn-secondary" id="btn_pfx_key">Extrair Chave (.key)</button>
+                    <button class="btn btn-secondary" id="btn_pfx_both">Extrair Ambos</button>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Certificado Extraído</h3></div>
+                    <div class="panel-content"><textarea id="pfx_cert_output" readonly placeholder="Certificado PEM aparecerá aqui..."></textarea></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Chave Privada Extraída</h3></div>
+                    <div class="panel-content"><textarea id="pfx_key_output" readonly placeholder="Chave privada PEM aparecerá aqui..."></textarea></div>
+                </div>
+            </div>
+
+            <div class="alert" id="certs_msg"></div>
+        </div>
+    </section>
+
     </main>
 
+    <script src="./libs/forge.min.js"></script>
     <script src="./js/app.js"></script>
     <script>
         if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {

@@ -257,6 +257,35 @@ body.sidebar-open .sidebar-overlay {
 .tool-header p { color: var(--text-muted); line-height: 1.5; }
 
 /* Embed de ferramentas externas (ex.: Código de Barras) */
+/* Cert Tabs */
+.cert-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.25rem;
+    overflow-x: auto;
+}
+.cert-tab {
+    background: none;
+    border: none;
+    padding: 0.6rem 1rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+}
+.cert-tab:hover { color: var(--text); }
+.cert-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+.cert-panel { display: none; }
+.cert-panel.active { display: block; }
+
 .tool-view-embed {
     max-width: none;
     height: calc(100vh - 6rem);

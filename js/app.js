@@ -1201,6 +1201,348 @@ document.addEventListener('DOMContentLoaded', () => {
         historyList.appendChild(container);
     };
 
+    // ==========================================
+    // Tool: Certificados SSL (via node-forge)
+    // ==========================================
+    const initCertificates = () => {
+        if (typeof forge === 'undefined') {
+            Logger.warn('node-forge não carregado — Certificados SSL indisponível');
+            return;
+        }
+
+        // Tab switching
+        document.querySelectorAll('.cert-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.cert-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.cert-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Show/hide password field for key decryption
+        const btnRemoveKeyPass = document.getElementById('btn_remove_key_pass');
+        const passPanel = document.getElementById('convert_pass_panel');
+        if (btnRemoveKeyPass && passPanel) {
+            btnRemoveKeyPass.addEventListener('click', () => {
+                passPanel.style.display = passPanel.style.display === 'none' ? 'block' : 'none';
+                handleRemoveKeyPass();
+            });
+        }
+
+        // Helper: buffer to hex
+        const bufToHex = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(':');
+        const bufToHexClean = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        // Helper: get public key modulus hash
+        const getPublicKeyHash = async (publicKeyDer) => {
+            const hashBuf = await crypto.subtle.digest('SHA-256', publicKeyDer);
+            return bufToHexClean(hashBuf);
+        };
+
+        // Helper: extract public key DER from cert or key
+        const extractPublicKeyDer = (pem, isKey) => {
+            try {
+                let publicKey;
+                if (isKey) {
+                    const privateKey = forge.pki.privateKeyFromPem(pem);
+                    publicKey = forge.pki.setRsaPublicKey(privateKey.n, privateKey.e);
+                } else {
+                    const cert = forge.pki.certificateFromPem(pem);
+                    publicKey = cert.publicKey;
+                }
+                const pubKeyPem = forge.pki.publicKeyToPem(publicKey);
+                // Extract base64 from PEM
+                const b64 = pubKeyPem.replace(/-----.*-----/g, '').replace(/\s/g, '');
+                const bytes = forge.util.decode64(b64);
+                const arr = new Uint8Array(bytes.length);
+                for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+                return arr.buffer;
+            } catch (e) {
+                return null;
+            }
+        };
+
+        // Helper: extract public key SPKI DER
+        const extractSpkiDer = (pem, isKey) => {
+            try {
+                let publicKey;
+                if (isKey) {
+                    const privateKey = forge.pki.privateKeyFromPem(pem);
+                    publicKey = forge.pki.setRsaPublicKey(privateKey.n, privateKey.e);
+                } else {
+                    const cert = forge.pki.certificateFromPem(pem);
+                    publicKey = cert.publicKey;
+                }
+                const spkiAsn1 = forge.pki.publicKeyToAsn1(publicKey);
+                const spkiDer = forge.asn1.toDer(spkiAsn1).getBytes();
+                const arr = new Uint8Array(spkiDer.length);
+                for (let i = 0; i < spkiDer.length; i++) arr[i] = spkiDer.charCodeAt(i);
+                return arr.buffer;
+            } catch (e) {
+                return null;
+            }
+        };
+
+        // ===== Tab 1: Certificate Info =====
+        document.getElementById('cert_btn_info').addEventListener('click', async () => {
+            const pem = document.getElementById('cert_input').value.trim();
+            if (!pem) return showMessage('certs_msg', 'Cole o certificado primeiro', 'error');
+            if (!pem.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Formato inválido. Cole em formato PEM.', 'error');
+
+            try {
+                const cert = forge.pki.certificateFromPem(pem);
+                const issuer = cert.issuer.getField('CN') ? cert.issuer.getField('CN').value : 'N/A';
+                const subject = cert.subject.getField('CN') ? cert.subject.getField('CN').value : 'N/A';
+                const serial = cert.serialNumber;
+                const notBefore = cert.validity.notBefore.toLocaleString('pt-BR');
+                const notAfter = cert.validity.notAfter.toLocaleString('pt-BR');
+                const now = new Date();
+                const isExpired = now > cert.validity.notAfter;
+                const daysLeft = Math.ceil((cert.validity.notAfter - now) / (1000 * 60 * 60 * 24));
+
+                // SHA256 fingerprint
+                const derBytes = forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes();
+                const derArr = new Uint8Array(derBytes.length);
+                for (let i = 0; i < derBytes.length; i++) derArr[i] = derBytes.charCodeAt(i);
+                const fingerprintBuf = await crypto.subtle.digest('SHA-256', derArr.buffer);
+                const fingerprint = bufToHex(fingerprintBuf);
+
+                // Public key info
+                const pubKeyDer = extractSpkiDer(pem, false);
+                const pubKeyHash = pubKeyDer ? await getPublicKeyHash(pubKeyDer) : 'N/A';
+
+                // Modulus (MD5 for comparison with openssl x509 -modulus)
+                const pubKey = cert.publicKey;
+                const modulusHex = pubKey.n.toString(16);
+                const modulusMd5Buf = await crypto.subtle.digest('MD5', new TextEncoder().encode(modulusHex));
+                const modulusMd5 = bufToHexClean(modulusMd5Buf);
+
+                let output = `═══════════════════════════════════════════\n`;
+                output += `  INFORMAÇÕES DO CERTIFICADO\n`;
+                output += `═══════════════════════════════════════════\n\n`;
+                output += `Subject (CN): ${subject}\n`;
+                output += `Issuer (CN):  ${issuer}\n`;
+                output += `Serial:       ${serial}\n\n`;
+                output += `Válido De:    ${notBefore}\n`;
+                output += `Válido Até:   ${notAfter}\n`;
+                output += `Status:       ${isExpired ? '❌ EXPIRADO' : '✅ Válido'} (${isExpired ? 'vencido há ' + Math.abs(daysLeft) : daysLeft + ' dias restantes'})\n\n`;
+                output += `SHA-256 Fingerprint:\n  ${fingerprint}\n\n`;
+                output += `Public Key SHA-256:\n  ${pubKeyHash}\n\n`;
+                output += `Modulus (MD5, compatível com openssl x509 -modulus | md5sum):\n  ${modulusMd5}\n`;
+
+                document.getElementById('cert_info_output').textContent = output;
+                showMessage('certs_msg', 'Informações extraídas com sucesso!');
+            } catch (e) {
+                Logger.error('Erro ao analisar certificado', { error: e.message });
+                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+            }
+        });
+
+        // ===== Tab 2: Validate Pair =====
+        document.getElementById('cert_btn_pair').addEventListener('click', async () => {
+            const certPem = document.getElementById('pair_cert_input').value.trim();
+            const keyPem = document.getElementById('pair_key_input').value.trim();
+            if (!certPem || !keyPem) return showMessage('certs_msg', 'Cole o certificado E a chave privada', 'error');
+
+            try {
+                const certSpki = extractSpkiDer(certPem, false);
+                const keySpki = extractSpkiDer(keyPem, true);
+
+                if (!certSpki || !keySpki) {
+                    showMessage('certs_msg', 'Erro ao extrair chave pública de um dos arquivos', 'error');
+                    return;
+                }
+
+                const certHash = await getPublicKeyHash(certSpki);
+                const keyHash = await getPublicKeyHash(keySpki);
+                const match = certHash === keyHash;
+
+                // Also compute modulus MD5 (compatível com openssl)
+                const cert = forge.pki.certificateFromPem(certPem);
+                const key = forge.pki.privateKeyFromPem(keyPem);
+                const certModulusMd5Buf = await crypto.subtle.digest('MD5', new TextEncoder().encode(cert.publicKey.n.toString(16)));
+                const keyModulusMd5Buf = await crypto.subtle.digest('MD5', new TextEncoder().encode(key.n.toString(16)));
+
+                let output = `═══════════════════════════════════════════\n`;
+                output += `  VALIDAÇÃO DE PAR (CERT + KEY)\n`;
+                output += `═══════════════════════════════════════════\n\n`;
+                output += `Cert Public Key SHA-256: ${certHash}\n`;
+                output += `Key  Public Key SHA-256: ${keyHash}\n\n`;
+                output += `Cert Modulus MD5: ${bufToHexClean(certModulusMd5Buf)}\n`;
+                output += `Key  Modulus MD5: ${bufToHexClean(keyModulusMd5Buf)}\n\n`;
+                output += match
+                    ? '✅ PAR VÁLIDO — Certificado e chave são correspondentes!'
+                    : '❌ PAR INVÁLIDO — Certificado e chave NÃO correspondem!';
+
+                document.getElementById('cert_pair_output').textContent = output;
+                showMessage('certs_msg', match ? 'Par válido!' : 'Par NÃO corresponde!', match ? 'success' : 'error');
+            } catch (e) {
+                Logger.error('Erro ao validar par', { error: e.message });
+                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+            }
+        });
+
+        // ===== Tab 3: Conversions =====
+        // PEM → DER (download)
+        document.getElementById('btn_pem_to_der').addEventListener('click', () => {
+            const pem = document.getElementById('convert_input').value.trim();
+            if (!pem) return showMessage('certs_msg', 'Cole o conteúdo PEM primeiro', 'error');
+            try {
+                // Try cert first, then key
+                let asn1;
+                if (pem.includes('BEGIN CERTIFICATE')) {
+                    asn1 = forge.pki.certificateToAsn1(forge.pki.certificateFromPem(pem));
+                } else if (pem.includes('BEGIN RSA PRIVATE KEY') || pem.includes('BEGIN PRIVATE KEY') || pem.includes('BEGIN ENCRYPTED PRIVATE KEY')) {
+                    showMessage('certs_msg', 'Chave privada já pode estar em DER. Use apenas com certificados.', 'error');
+                    return;
+                } else {
+                    showMessage('certs_msg', 'Formato PEM não reconhecido', 'error');
+                    return;
+                }
+                const derBytes = forge.asn1.toDer(asn1).getBytes();
+                // Convert to base64 for display
+                const b64 = forge.util.encode64(derBytes);
+                document.getElementById('convert_output').value = `Formato DER (Base64):\n${b64}\n\nTamanho: ${derBytes.length} bytes\nUse o botão Download para salvar como .der/.cer`;
+                // Create download
+                const arr = new Uint8Array(derBytes.length);
+                for (let i = 0; i < derBytes.length; i++) arr[i] = derBytes.charCodeAt(i);
+                const blob = new Blob([arr], { type: 'application/octet-stream' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'certificado.cer';
+                a.click();
+                URL.revokeObjectURL(a.href);
+                showMessage('certs_msg', 'Certificado convertido para DER e download iniciado!');
+            } catch (e) {
+                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+            }
+        });
+
+        // Extract public key
+        document.getElementById('btn_extract_pubkey').addEventListener('click', async () => {
+            const pem = document.getElementById('convert_input').value.trim();
+            if (!pem) return showMessage('certs_msg', 'Cole o certificado ou chave primeiro', 'error');
+            try {
+                let pubKeyPem;
+                if (pem.includes('BEGIN CERTIFICATE')) {
+                    const cert = forge.pki.certificateFromPem(pem);
+                    pubKeyPem = forge.pki.publicKeyToPem(cert.publicKey);
+                } else if (pem.includes('RSA PRIVATE KEY') || pem.includes('BEGIN PRIVATE KEY')) {
+                    const key = forge.pki.privateKeyFromPem(pem);
+                    const pubKey = forge.pki.setRsaPublicKey(key.n, key.e);
+                    pubKeyPem = forge.pki.publicKeyToPem(pubKey);
+                } else {
+                    showMessage('certs_msg', 'Formato não reconhecido', 'error');
+                    return;
+                }
+
+                // Compute SHA-256 of SPKI
+                const spkiDer = extractSpkiDer(pem, pem.includes('PRIVATE KEY'));
+                const hash = spkiDer ? await getPublicKeyHash(spkiDer) : 'N/A';
+
+                document.getElementById('convert_output').value = `${pubKeyPem}\n\nSHA-256 da Chave Pública:\n${hash}`;
+                showMessage('certs_msg', 'Chave pública extraída!');
+            } catch (e) {
+                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+            }
+        });
+
+        // Remove key password
+        function handleRemoveKeyPass() {
+            const pem = document.getElementById('convert_input').value.trim();
+            const pass = document.getElementById('convert_key_pass').value;
+            if (!pem) return showMessage('certs_msg', 'Cole a chave privada com senha primeiro', 'error');
+            if (!pem.includes('ENCRYPTED')) {
+                showMessage('certs_msg', 'Esta chave não parece estar protegida por senha (não contém ENCRYPTED)', 'error');
+                return;
+            }
+            if (!pass) {
+                showMessage('certs_msg', 'Digite a senha da chave privada', 'error');
+                return;
+            }
+            try {
+                const decryptedKey = forge.pki.decryptRsaPrivateKey(pem, pass);
+                if (!decryptedKey) {
+                    showMessage('certs_msg', 'Senha incorreta ou formato inválido', 'error');
+                    return;
+                }
+                const unencryptedPem = forge.pki.privateKeyToPem(decryptedKey);
+                document.getElementById('convert_output').value = unencryptedPem;
+                showMessage('certs_msg', 'Senha removida com sucesso!');
+            } catch (e) {
+                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+            }
+        }
+
+        // ===== Tab 4: PFX Extraction =====
+        const readPfxInput = () => {
+            const raw = document.getElementById('pfx_input').value.trim();
+            if (!raw) return null;
+            // Accept base64 or raw binary
+            try {
+                const bytes = forge.util.decode64(raw);
+                return forge.asn1.fromDer(bytes);
+            } catch (_) {
+                // Maybe it's raw DER
+                try {
+                    return forge.asn1.fromDer(raw);
+                } catch (__) {
+                    return null;
+                }
+            }
+        };
+
+        const extractFromPfx = (extractCerts, extractKey) => {
+            const pass = document.getElementById('pfx_pass').value;
+            const asn1 = readPfxInput();
+            if (!asn1) return showMessage('certs_msg', 'PFX inválido ou vazio. Cole em Base64.', 'error');
+
+            try {
+                const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, pass);
+
+                if (extractCerts) {
+                    const bags = p12.getBags({ bagType: forge.pki.oids.certBag });
+                    const certs = bags[forge.pki.oids.certBag];
+                    if (certs && certs.length > 0) {
+                        const certPem = forge.pki.certificateToPem(certs[0].cert);
+                        document.getElementById('pfx_cert_output').value = certPem;
+                    } else {
+                        document.getElementById('pfx_cert_output').value = 'Nenhum certificado encontrado no PFX.';
+                    }
+                }
+
+                if (extractKey) {
+                    const bags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+                    const keyBags = bags[forge.pki.oids.pkcs8ShroudedKeyBag];
+                    let keyPem = '';
+                    if (keyBags && keyBags.length > 0) {
+                        keyPem = forge.pki.privateKeyToPem(keyBags[0].key);
+                    } else {
+                        // Try unencrypted key bag
+                        const bags2 = p12.getBags({ bagType: forge.pki.oids.keyBag });
+                        const keyBags2 = bags2[forge.pki.oids.keyBag];
+                        if (keyBags2 && keyBags2.length > 0) {
+                            keyPem = forge.pki.privateKeyToPem(keyBags2[0].key);
+                        }
+                    }
+                    document.getElementById('pfx_key_output').value = keyPem || 'Nenhuma chave privada encontrada no PFX.';
+                }
+
+                showMessage('certs_msg', 'Extração concluída!');
+            } catch (e) {
+                Logger.error('Erro ao extrair PFX', { error: e.message });
+                showMessage('certs_msg', 'Erro: ' + e.message + (e.message.includes('password') ? ' — Verifique a senha.' : ''), 'error');
+            }
+        };
+
+        document.getElementById('btn_pfx_cert').addEventListener('click', () => extractFromPfx(true, false));
+        document.getElementById('btn_pfx_key').addEventListener('click', () => extractFromPfx(false, true));
+        document.getElementById('btn_pfx_both').addEventListener('click', () => extractFromPfx(true, true));
+
+        Logger.info('Certificados SSL tool initialized');
+    };
+
     const initHistory = () => {
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
@@ -1235,10 +1577,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initSQL();
     initRegex();
     initXML();
+    initCertificates();
     initTextQR();
     initHistory();
 
-    Logger.info('Canivete Suíço Dev initialized', { tools: 18 });
+    Logger.info('Canivete Suíço Dev initialized', { tools: 19 });
 
     // Set initially active view's title
     const activeNav = document.querySelector('.nav-item.active');

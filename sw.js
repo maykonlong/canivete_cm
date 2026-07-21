@@ -3,7 +3,7 @@
  * Versionamento via APP_VERSION para invalidar caches automaticamente.
  */
 
-const APP_VERSION = '2.0.2';
+const APP_VERSION = '2.1.0';
 const CACHE_NAME = `canivete-suico-v${APP_VERSION}`;
 
 const ASSETS = [
@@ -18,7 +18,8 @@ const ASSETS = [
     './libs/sql-formatter.min.js',
     './libs/vkbeautify.min.js',
     './libs/dompurify.min.js',
-    './libs/JsBarcode.all.min.js'
+    './libs/JsBarcode.all.min.js',
+    './libs/forge.min.js'
 ];
 
 // Instala e faz cache dos assets essenciais
