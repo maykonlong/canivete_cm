@@ -1251,10 +1251,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const bufToHex = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(':');
         const bufToHexClean = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // Helper: get public key modulus hash
-        const getPublicKeyHash = async (publicKeyDer) => {
-            const hashBuf = await crypto.subtle.digest('SHA-256', publicKeyDer);
-            return bufToHexClean(hashBuf);
+        // Helper: get public key hash (SHA-256 via forge)
+        const getPublicKeyHash = (publicKeyDer) => {
+            const bytes = String.fromCharCode.apply(null, new Uint8Array(publicKeyDer));
+            return forge.md.sha256.create().update(bytes).digest().toHex();
         };
 
         // Helper: extract public key DER from cert or key
@@ -1318,16 +1318,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isExpired = now > cert.validity.notAfter;
                 const daysLeft = Math.ceil((cert.validity.notAfter - now) / (1000 * 60 * 60 * 24));
 
-                // SHA256 fingerprint
+                // SHA256 fingerprint (via forge)
                 const derBytes = forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes();
-                const derArr = new Uint8Array(derBytes.length);
-                for (let i = 0; i < derBytes.length; i++) derArr[i] = derBytes.charCodeAt(i);
-                const fingerprintBuf = await crypto.subtle.digest('SHA-256', derArr.buffer);
-                const fingerprint = bufToHex(fingerprintBuf);
+                const fingerprint = forge.md.sha256.create().update(derBytes).digest().toHex();
 
                 // Public key info
                 const pubKeyDer = extractSpkiDer(pem, false);
-                const pubKeyHash = pubKeyDer ? await getPublicKeyHash(pubKeyDer) : 'N/A';
+                const pubKeyHash = pubKeyDer ? getPublicKeyHash(pubKeyDer) : 'N/A';
 
                 // Modulus (MD5 via forge — WebCrypto doesn't support MD5)
                 const pubKey = cert.publicKey;
@@ -1372,8 +1369,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const certHash = await getPublicKeyHash(certSpki);
-                const keyHash = await getPublicKeyHash(keySpki);
+                const certHash = getPublicKeyHash(certSpki);
+                const keyHash = getPublicKeyHash(keySpki);
                 const match = certHash === keyHash;
 
                 // Also compute modulus MD5 (compatível com openssl)
@@ -1462,7 +1459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             pubKeyPem = forge.pki.publicKeyToPem(forge.pki.setRsaPublicKey(key.n, key.e));
                         } else { return showMessage('certs_msg', 'Formato não reconhecido', 'error'); }
                         const spkiDer = extractSpkiDer(input, input.includes('PRIVATE KEY'));
-                        const hash = spkiDer ? await getPublicKeyHash(spkiDer) : 'N/A';
+                        const hash = spkiDer ? getPublicKeyHash(spkiDer) : 'N/A';
                         output.value = `${pubKeyPem}\n\nSHA-256 da Chave Pública:\n${hash}`;
                         showMessage('certs_msg', 'Chave pública extraída!');
                         break;

@@ -3,7 +3,7 @@
  * Versionamento via APP_VERSION para invalidar caches automaticamente.
  */
 
-const APP_VERSION = '2.1.1';
+const APP_VERSION = '2.1.2';
 const CACHE_NAME = `canivete-suico-v${APP_VERSION}`;
 
 const ASSETS = [
@@ -27,7 +27,7 @@ self.addEventListener('install', (event) => {
     console.log(`[SW] Installing ${CACHE_NAME}`);
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(ASSETS))
+            .then((cache) => cache.addAll(ASSETS.map(url => new Request(url, { cache: 'no-cache' }))))
             .then(() => self.skipWaiting())
     );
 });
