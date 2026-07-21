@@ -1219,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const targetEl = document.getElementById(targetId);
                 if (!targetEl) return;
 
-                if (targetId === 'pfx_input' || targetId === 'cert_input' || targetId === 'pair_cert_input' || targetId === 'pair_key_input') {
+                if (targetId === 'pfx_input') {
                     binaryFileInput.onchange = (ev) => {
                         const file = ev.target.files[0];
                         if (!file) return;
@@ -1329,11 +1329,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const pubKeyDer = extractSpkiDer(pem, false);
                 const pubKeyHash = pubKeyDer ? await getPublicKeyHash(pubKeyDer) : 'N/A';
 
-                // Modulus (MD5 for comparison with openssl x509 -modulus)
+                // Modulus (MD5 via forge — WebCrypto doesn't support MD5)
                 const pubKey = cert.publicKey;
                 const modulusHex = pubKey.n.toString(16);
-                const modulusMd5Buf = await crypto.subtle.digest('MD5', new TextEncoder().encode(modulusHex));
-                const modulusMd5 = bufToHexClean(modulusMd5Buf);
+                const modulusMd5 = forge.md.md5.create().update(modulusHex).digest().toHex();
 
                 let output = `═══════════════════════════════════════════\n`;
                 output += `  INFORMAÇÕES DO CERTIFICADO\n`;
@@ -1380,16 +1379,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Also compute modulus MD5 (compatível com openssl)
                 const cert = forge.pki.certificateFromPem(certPem);
                 const key = forge.pki.privateKeyFromPem(keyPem);
-                const certModulusMd5Buf = await crypto.subtle.digest('MD5', new TextEncoder().encode(cert.publicKey.n.toString(16)));
-                const keyModulusMd5Buf = await crypto.subtle.digest('MD5', new TextEncoder().encode(key.n.toString(16)));
+                const certModulusMd5 = forge.md.md5.create().update(cert.publicKey.n.toString(16)).digest().toHex();
+                const keyModulusMd5 = forge.md.md5.create().update(key.n.toString(16)).digest().toHex();
 
                 let output = `═══════════════════════════════════════════\n`;
                 output += `  VALIDAÇÃO DE PAR (CERT + KEY)\n`;
                 output += `═══════════════════════════════════════════\n\n`;
                 output += `Cert Public Key SHA-256: ${certHash}\n`;
                 output += `Key  Public Key SHA-256: ${keyHash}\n\n`;
-                output += `Cert Modulus MD5: ${bufToHexClean(certModulusMd5Buf)}\n`;
-                output += `Key  Modulus MD5: ${bufToHexClean(keyModulusMd5Buf)}\n\n`;
+                output += `Cert Modulus MD5: ${certModulusMd5}\n`;
+                output += `Key  Modulus MD5: ${keyModulusMd5}\n\n`;
                 output += match
                     ? '✅ PAR VÁLIDO — Certificado e chave são correspondentes!'
                     : '❌ PAR INVÁLIDO — Certificado e chave NÃO correspondem!';
