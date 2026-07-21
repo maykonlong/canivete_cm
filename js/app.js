@@ -1210,6 +1210,33 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Binary file upload for PFX/cert files
+        const binaryFileInput = document.getElementById('global_binary_file_input');
+        document.querySelectorAll('#view_certs .upload-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetId = btn.getAttribute('data-target');
+                const targetEl = document.getElementById(targetId);
+                if (!targetEl) return;
+
+                if (targetId === 'pfx_input' || targetId === 'cert_input' || targetId === 'pair_cert_input' || targetId === 'pair_key_input') {
+                    binaryFileInput.onchange = (ev) => {
+                        const file = ev.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (rev) => {
+                            const b64 = rev.target.result.split(',')[1];
+                            targetEl.value = b64;
+                            showMessage('certs_msg', `Arquivo "${file.name}" carregado (${(file.size / 1024).toFixed(1)} KB)`);
+                        };
+                        reader.readAsDataURL(file);
+                        binaryFileInput.value = '';
+                    };
+                    binaryFileInput.click();
+                }
+            }, true);
+        });
+
         // Tab switching
         document.querySelectorAll('.cert-tab').forEach(tab => {
             tab.addEventListener('click', () => {
