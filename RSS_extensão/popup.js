@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     isSpeaking: false,
     utterance: null,
     settings: {
-      theme: 'editorial-sepia',
+      theme: 'dark',
       viewMode: 'list',
       sortOrder: 'date-desc',
       fontSize: 'text-md',
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     state.settings = {
-      theme: 'editorial-sepia',
+      theme: 'dark',
       viewMode: 'list',
       sortOrder: 'date-desc',
       fontSize: 'text-md',

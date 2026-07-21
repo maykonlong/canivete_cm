@@ -86,7 +86,7 @@
       store.settings = {
         syncInterval: 15,
         notificationsEnabled: false,
-        theme: 'editorial-sepia',
+        theme: 'dark',
         viewMode: 'list',
         sortOrder: 'date-desc',
         fontSize: 'text-md',
