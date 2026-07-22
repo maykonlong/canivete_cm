@@ -2609,7 +2609,7 @@ document.addEventListener('DOMContentLoaded', () => {
     Logger.info('Command Palette + Theme Toggle initialized');
 
     // ==========================================
-    // SPI Test Tools Module
+    // Geradores Module
     // ==========================================
     const _rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
     const _randChar = (chars) => chars[_rand(0, chars.length - 1)];
@@ -2674,7 +2674,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const _ATV=['Consultoria','Desenvolvimento','Soluções','Assessoria','Distribuidora'];
     const _pick=a=>a[_rand(0,a.length-1)];
 
-    window.SPI = {
+    window.Geradores = {
         copiar(id) {
             const el=document.getElementById(id);
             if(!el)return;
@@ -2823,5 +2823,5 @@ document.addEventListener('DOMContentLoaded', () => {
             if(el) el.textContent=JSON.stringify(data,null,2);
         }
     };
-    Logger.info('SPI Test Tools module initialized');
+    Logger.info('Geradores module initialized');
 });
