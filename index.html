@@ -1078,7 +1078,7 @@
         <div class="panel">
             <h3>Configuração</h3>
             <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
-                <div class="input-group" style="flex:1;min-width:120px;"><label>Quantidade</label><input type="number" id="spi_cpf_qtd" value="10" min="1" max="1000"></div>
+                <div class="input-group" style="flex:1;min-width:120px;"><label>Quantidade</label><input type="number" id="spi_cpf_qtd" value="1" min="1" max="1000"></div>
                 <div class="input-group" style="flex:1;min-width:180px;"><label>Formato</label><select id="spi_cpf_fmt"><option value="mascarado">Com máscara</option><option value="limpo">Sem máscara</option></select></div>
                 <div class="input-group" style="flex:1;min-width:180px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="checkbox" id="spi_cpf_alpha"> Alfanumérico</label></div>
             </div>
@@ -1093,7 +1093,7 @@
         <div class="page-header"><h1>CNPJ — Gerador & Validador</h1><p>Numérico e alfanumérico (Lei 14.478/2022).</p></div>
         <div class="panel">
             <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
-                <div class="input-group" style="flex:1;min-width:120px;"><label>Qtd</label><input type="number" id="spi_cnpj_qtd" value="10"></div>
+                <div class="input-group" style="flex:1;min-width:120px;"><label>Qtd</label><input type="number" id="spi_cnpj_qtd" value="1"></div>
                 <div class="input-group" style="flex:1;min-width:120px;"><label>Filial</label><input type="number" id="spi_cnpj_filial" value="1" min="1" max="9999"></div>
                 <div class="input-group" style="flex:1;min-width:160px;"><label>Tipo</label><select id="spi_cnpj_tipo"><option value="numerico">Numérico</option><option value="alfa">Alfanumérico</option></select></div>
                 <div class="input-group" style="flex:1;min-width:160px;"><label>Formato</label><select id="spi_cnpj_fmt"><option value="mascarado">Com máscara</option><option value="limpo">Sem máscara</option></select></div>
@@ -1110,7 +1110,7 @@
         <div class="panel">
             <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
                 <div class="input-group" style="flex:1;min-width:150px;"><label>Tipo</label><select id="spi_pix_tipo"><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">Email</option><option value="telefone">Telefone</option><option value="evp">EVP (UUID)</option></select></div>
-                <div class="input-group" style="flex:1;min-width:100px;"><label>Qtd</label><input type="number" id="spi_pix_qtd" value="5"></div>
+                <div class="input-group" style="flex:1;min-width:100px;"><label>Qtd</label><input type="number" id="spi_pix_qtd" value="1"></div>
             </div>
             <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="Geradores.gerarPix()">🎲 Gerar</button><button class="btn btn-secondary" onclick="Geradores.copiar('spi_pix_out')">📋 Copiar</button></div>
         </div>

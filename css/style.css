@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════
    CANIVETE SUÍÇO DEV v3.0 — Design System
    Inspired by: Linear, Vercel, Shadcn UI, Stripe
    100% CSS Custom Properties — Zero dependencies
@@ -444,3 +444,55 @@ body.sidebar-open { overflow: hidden; }
 @media (max-width: 640px) {
     .stats-grid { grid-template-columns: 1fr; }
 }
+/* â•â•â• Geradores: Output Items â•â•â• */
+.output-list { padding: 0.5rem; }
+.output-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid rgba(var(--color-primary-rgb, 59,130,246), 0.1);
+    transition: background 0.15s;
+}
+.output-item:last-child { border-bottom: none; }
+.output-item:hover { background: rgba(var(--color-primary-rgb, 59,130,246), 0.05); }
+.output-value {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--color-text);
+    user-select: all;
+    word-break: break-all;
+}
+.btn-copy-item {
+    background: none;
+    border: 1px solid rgba(var(--color-primary-rgb, 59,130,246), 0.2);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.btn-copy-item:hover {
+    background: rgba(var(--color-primary-rgb, 59,130,246), 0.1);
+    border-color: var(--color-primary);
+}
+.output-placeholder {
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+.btn-clear-all {
+    background: var(--color-bg-alt);
+    color: var(--color-text-muted);
+    border: 1px solid rgba(var(--color-primary-rgb, 59,130,246), 0.1);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+}
+.btn-clear-all:hover { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.3); }
+[data-theme="dark"] .btn-clear-all { background: var(--color-bg-alt); }
+[data-theme="dark"] .btn-clear-all:hover { background: rgba(239,68,68,0.15); }

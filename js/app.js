@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Canivete Suíço Dev - Core Logic
  */
 
@@ -2674,6 +2674,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const _ATV=['Consultoria','Desenvolvimento','Soluções','Assessoria','Distribuidora'];
     const _pick=a=>a[_rand(0,a.length-1)];
 
+    function _criarItem(valor) {
+        const row=document.createElement('div');
+        row.className='output-item';
+        const span=document.createElement('span');
+        span.className='output-value';
+        span.textContent=valor;
+        const btn=document.createElement('button');
+        btn.className='btn-copy-item';
+        btn.title='Copiar';
+        btn.textContent='ðŸ“‹';
+        btn.onclick=()=>navigator.clipboard.writeText(valor).then(()=>{btn.textContent='âœ…';setTimeout(()=>btn.textContent='ðŸ“‹',1200);}).catch(()=>{});
+        row.appendChild(span);
+        row.appendChild(btn);
+        return row;
+    }
     window.Geradores = {
         copiar(id) {
             const el=document.getElementById(id);
