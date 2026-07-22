@@ -2051,8 +2051,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (type === 'pfx_to_pem') {
                             // Show cert in block 1, key in block 2
-                            out1Label.textContent = '📜 Certificado (PEM)';
-                            out2Label.textContent = '🔑 Chave Privada (PEM)';
+                            out1Label.textContent = '📜 Certificado (.pem)';
+                            out2Label.textContent = '🔑 Chave Privada (.key)';
                             if (certs.length > 0) {
                                 output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
                             } else {
@@ -2063,14 +2063,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 keyBlock.style.display = 'block';
                             }
                         } else if (type === 'pfx_to_pem_key') {
-                            out1Label.textContent = '🔑 Chave Privada (PEM)';
+                            out1Label.textContent = '🔑 Chave Privada (.key)';
                             if (key) {
                                 output.value = forge.pki.privateKeyToPem(key);
                             } else {
                                 return showMessage('certs_msg', 'Nenhuma chave privada encontrada no PFX', 'error');
                             }
                         } else {
-                            out1Label.textContent = '📜 Certificado (PEM)';
+                            out1Label.textContent = '📜 Certificado (.pem)';
                             if (certs.length > 0) {
                                 output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
                             } else {
