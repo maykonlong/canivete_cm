@@ -148,9 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const okBtn = document.getElementById('errorModalOk');
         if (!modal || !text || !okBtn) { alert(message); return; }
         text.textContent = message;
-        modal.hidden = false;
+        modal.style.display = 'flex';
         okBtn.focus();
-        const close = () => { modal.hidden = true; okBtn.removeEventListener('click', close); modal.removeEventListener('click', closeBg); };
+        const close = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', close); modal.removeEventListener('click', closeBg); };
         const closeBg = (e) => { if (e.target === modal) close(); };
         okBtn.addEventListener('click', close);
         modal.addEventListener('click', closeBg);
