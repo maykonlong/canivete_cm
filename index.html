@@ -1026,39 +1026,45 @@
                     <div class="panel-header"><h3>Tipo de Conversão</h3></div>
                     <div class="panel-content">
                         <select id="convert_type">
-                            <optgroup label="── Certificado ──">
-                                <option value="pem_to_der">Cert PEM → DER (.cer)</option>
-                                <option value="der_to_pem">DER (Base64) → Cert PEM</option>
-                                <option value="cert_to_text">Cert → Texto Resumido</option>
-                                <option value="cert_to_fulltext">Cert → Texto Completo (x509 -text)</option>
-                                <option value="cert_to_json">Cert → JSON (structured)</option>
-                                <option value="cert_fingerprint_sha1">Cert → Fingerprint SHA-1</option>
-                                <option value="cert_fingerprint_sha256">Cert → Fingerprint SHA-256</option>
-                                <option value="cert_fingerprint_md5">Cert → Fingerprint MD5</option>
-                                <option value="extract_sans">Extrair SANs (Subject Alt Names)</option>
-                                <option value="extract_urls">Extrair URLs (CRL, OCSP, AIA)</option>
+                            <optgroup label="🔄 PFX / PKCS#12 (mais usados)">
+                                <option value="pfx_to_pem">📦➡️📄 PFX → Cert + Key (extrair PEM)</option>
+                                <option value="pfx_to_pem_key">📦➡️🔑 PFX → Apenas Key (extrair chave)</option>
+                                <option value="pfx_to_pem_cert">📦➡️📜 PFX → Apenas Cert (extrair certificado)</option>
+                                <option value="pem_to_pfx">📄+🔑➡️📦 Cert + Key → PFX (empacotar)</option>
                             </optgroup>
-                            <optgroup label="── Chaves ──">
-                                <option value="extract_pubkey">Cert/Key → Chave Pública PEM</option>
-                                <option value="key_to_jwk">Key PEM → JWK (JSON Web Key)</option>
-                                <option value="jwk_to_pem">JWK → Key PEM (RSA)</option>
-                                <option value="key_pkcs1_to_pkcs8">Key PKCS#1 → PKCS#8</option>
-                                <option value="key_pkcs8_to_pkcs1">Key PKCS#8 → PKCS#1</option>
-                                <option value="remove_key_pass">Remover Senha da Key</option>
-                                <option value="generate_rsa_key">Gerar Par de Chaves RSA</option>
+                            <optgroup label="📜 Certificado (conversões)">
+                                <option value="pem_to_der">📜➡️📄 PEM → DER (.cer binário)</option>
+                                <option value="der_to_pem">📄➡️📜 DER (Base64) → PEM</option>
+                                <option value="cert_to_text">📜➡️📝 Cert → Resumo legível</option>
+                                <option value="cert_to_fulltext">📜➡️📋 Cert → Texto completo (x509 -text)</option>
+                                <option value="cert_to_json">📜➡️{} Cert → JSON estruturado</option>
                             </optgroup>
-                            <optgroup label="── CSR (Certificate Signing Request) ──">
-                                <option value="generate_csr">Gerar CSR (a partir de Key + dados)</option>
-                                <option value="csr_to_text">CSR → Texto (ler informações)</option>
+                            <optgroup label="🔍 Fingerprint / Hashes">
+                                <option value="cert_fingerprint_sha256">📜→ SHA-256 Fingerprint</option>
+                                <option value="cert_fingerprint_sha1">📜→ SHA-1 Fingerprint</option>
+                                <option value="cert_fingerprint_md5">📜→ MD5 Fingerprint</option>
                             </optgroup>
-                            <optgroup label="── PFX / PKCS#12 ──">
-                                <option value="pem_to_pfx">Cert + Key → PFX/PKCS#12</option>
-                                <option value="pfx_to_pem">PFX → PEM (Cert + Key)</option>
+                            <optgroup label="📋 Extrair informações">
+                                <option value="extract_sans">📜→ SANs (Subject Alt Names)</option>
+                                <option value="extract_urls">📜→ URLs (CRL, OCSP, AIA)</option>
+                                <option value="extract_pubkey">📜/🔑→ Chave Pública PEM</option>
+                                <option value="cert_days_left">📜→ Dias restantes de validade</option>
                             </optgroup>
-                            <optgroup label="── Utilitários ──">
-                                <option value="cert_to_selfsigned">Gerar Cert Auto-Assinado (a partir de Key)</option>
-                                <option value="chain_concat">Concatenar Cadeia de Certs</option>
-                                <option value="cert_days_left">Calcular Dias Restantes</option>
+                            <optgroup label="🔑 Chaves (conversões)">
+                                <option value="key_pkcs1_to_pkcs8">🔑 PKCS#1 → PKCS#8</option>
+                                <option value="key_pkcs8_to_pkcs1">🔑 PKCS#8 → PKCS#1</option>
+                                <option value="remove_key_pass">🔑🔒→🔓 Remover senha da Key</option>
+                                <option value="key_to_jwk">🔑→ JWK (JSON Web Key)</option>
+                                <option value="jwk_to_pem">JWK→🔑 PEM (RSA)</option>
+                            </optgroup>
+                            <optgroup label="🆕 Gerar">
+                                <option value="generate_rsa_key">🆕 Gerar par de chaves RSA</option>
+                                <option value="generate_csr">🆕 Gerar CSR (Key + CN)</option>
+                                <option value="csr_to_text">📝 CSR → Ler informações</option>
+                                <option value="cert_to_selfsigned">🆕 Gerar cert auto-assinado (Key)</option>
+                            </optgroup>
+                            <optgroup label="🔧 Utilitários">
+                                <option value="chain_concat">🔗 Concatenar cadeia de certs</option>
                             </optgroup>
                         </select>
                     </div>

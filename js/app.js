@@ -1344,6 +1344,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Reset state when clearing cert_input
+        document.getElementById('cert_input').addEventListener('cleared', () => {
+            const passPanel = document.getElementById('cert_info_pass_panel');
+            if (passPanel) passPanel.style.display = 'none';
+            const passInput = document.getElementById('cert_info_pfx_pass');
+            if (passInput) passInput.value = '';
+            const output = document.getElementById('cert_info_output');
+            if (output) output.textContent = '';
+        });
+
         // Auto-detect content type when pasting
         document.getElementById('cert_input').addEventListener('input', () => {
             const val = document.getElementById('cert_input').value.trim();
@@ -1490,7 +1500,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show/hide extra panels based on conversion type
         convertType.addEventListener('change', () => {
             const v = convertType.value;
-            const needsPass = ['remove_key_pass', 'pem_to_pfx', 'pfx_to_pem', 'generate_csr', 'cert_to_selfsigned', 'generate_rsa_key'].includes(v);
+            const needsPass = ['remove_key_pass', 'pem_to_pfx', 'pfx_to_pem', 'pfx_to_pem_key', 'pfx_to_pem_cert', 'generate_csr', 'cert_to_selfsigned', 'generate_rsa_key'].includes(v);
             const needsExtra = ['pem_to_pfx'].includes(v);
             passPanel.style.display = needsPass ? 'block' : 'none';
             extraPanel.style.display = needsExtra ? 'block' : 'none';
@@ -1500,7 +1510,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (v === 'remove_key_pass') {
                 passPanel.querySelector('h3').textContent = 'Senha da Chave Privada';
                 passPanel.querySelector('input').placeholder = 'Digite a senha da chave';
-            } else if (v === 'pfx_to_pem') {
+            } else if (v === 'pfx_to_pem' || v === 'pfx_to_pem_key' || v === 'pfx_to_pem_cert') {
                 passPanel.querySelector('h3').textContent = 'Senha do PFX';
                 passPanel.querySelector('input').placeholder = 'Senha do arquivo PFX';
             } else if (v === 'generate_rsa_key') {
@@ -1863,7 +1873,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         showMessage('certs_msg', 'CSR lido!');
                         break;
                     }
-                    case 'pfx_to_pem': {
+                    case 'pfx_to_pem':
+                    case 'pfx_to_pem_key':
+                    case 'pfx_to_pem_cert': {
                         const pfxPass = document.getElementById('convert_key_pass').value;
                         let asn1;
                         try { asn1 = forge.asn1.fromDer(forge.util.decode64(input.replace(/\s/g, ''))); } catch (_) {}
@@ -1875,10 +1887,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         const kPlain = p12.getBags({ bagType: forge.pki.oids.keyBag });
                         const key = (kShr[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0]?.key) || (kPlain[forge.pki.oids.keyBag]?.[0]?.key);
                         let pem = '';
-                        if (key) pem += forge.pki.privateKeyToPem(key) + '\n';
-                        certs.forEach(b => { pem += forge.pki.certificateToPem(b.cert) + '\n'; });
+                        if (type === 'pfx_to_pem' || type === 'pfx_to_pem_key') {
+                            if (key) pem += forge.pki.privateKeyToPem(key) + '\n';
+                            else return showMessage('certs_msg', 'Nenhuma chave privada encontrada no PFX', 'error');
+                        }
+                        if (type === 'pfx_to_pem' || type === 'pfx_to_pem_cert') {
+                            if (certs.length > 0) {
+                                certs.forEach(b => { pem += forge.pki.certificateToPem(b.cert) + '\n'; });
+                            } else if (type === 'pfx_to_pem_cert') {
+                                return showMessage('certs_msg', 'Nenhum certificado encontrado no PFX', 'error');
+                            }
+                        }
                         output.value = pem || 'Nenhum dado extraído.';
-                        showMessage('certs_msg', 'PFX convertido para PEM!');
+                        const label = type === 'pfx_to_pem' ? 'Cert + Key' : type === 'pfx_to_pem_key' ? 'Key' : 'Cert';
+                        showMessage('certs_msg', `PFX → ${label} extraído!`);
                         break;
                     }
                     case 'cert_to_selfsigned': {
