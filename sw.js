@@ -49,9 +49,22 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Estratégia: Cache First para assets locais, Network First para API/proxy
+// Estratégia: Network First para sw.js, Cache First para assets locais, Network First para API/proxy
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
+
+    // Sempre buscar da rede: sw.js, index.html, style.css, app.js (permite auto-atualização)
+    const NETWORK_FIRST = ['/sw.js', '/index.html', '/css/style.css', '/js/app.js'];
+    if (NETWORK_FIRST.some(p => url.pathname.endsWith(p))) {
+        event.respondWith(
+            fetch(event.request).then((response) => {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+                return response;
+            }).catch(() => caches.match(event.request))
+        );
+        return;
+    }
 
     // Não cacheia requisições para API/proxy ou externas
     if (url.pathname.startsWith('/api/') || url.origin !== self.location.origin) {
