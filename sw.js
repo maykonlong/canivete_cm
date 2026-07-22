@@ -3,7 +3,7 @@
  * Versionamento via APP_VERSION para invalidar caches automaticamente.
  */
 
-const APP_VERSION = '2.1.5';
+const APP_VERSION = '2.2.0';
 const CACHE_NAME = `canivete-suico-v${APP_VERSION}`;
 
 const ASSETS = [
