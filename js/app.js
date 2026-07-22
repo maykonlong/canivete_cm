@@ -2138,7 +2138,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (e) {
                 Logger.error('Erro na conversão', { error: e.message });
-                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+                const msg = e.message || '';
+                if (msg.includes('password') || msg.includes('Password') || msg.includes('MAC') || msg.includes('mac') || msg.includes('invalid')) {
+                    showMessage('certs_msg', '❌ Senha incorreta ou PFX corrompido. Verifique a senha e tente novamente.', 'error');
+                } else {
+                    showMessage('certs_msg', 'Erro: ' + msg, 'error');
+                }
             }
         });
 
