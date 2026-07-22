@@ -1080,6 +1080,7 @@
             <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
                 <div class="input-group" style="flex:1;min-width:120px;"><label>Quantidade</label><input type="number" id="spi_cpf_qtd" value="1" min="1" max="1000"></div>
                 <div class="input-group" style="flex:1;min-width:180px;"><label>Formato</label><select id="spi_cpf_fmt"><option value="mascarado">Com máscara</option><option value="limpo">Sem máscara</option></select></div>
+                    <div class="input-group" style="flex:0;min-width:140px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="spi_cpf_alpha"> AlfanumÃ©rico (A-Z)</label></div>
                 <div class="input-group" style="flex:1;min-width:180px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="checkbox" id="spi_cpf_alpha"> Alfanumérico</label></div>
             </div>
             <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="Geradores.gerarCPF()">🎲 Gerar</button><button class="btn btn-secondary" onclick="Geradores.copiar('spi_cpf_out')">📋 Copiar</button></div>
@@ -1097,6 +1098,7 @@
                 <div class="input-group" style="flex:1;min-width:120px;"><label>Filial</label><input type="number" id="spi_cnpj_filial" value="1" min="1" max="9999"></div>
                 <div class="input-group" style="flex:1;min-width:160px;"><label>Tipo</label><select id="spi_cnpj_tipo"><option value="numerico">Numérico</option><option value="alfa">Alfanumérico</option></select></div>
                 <div class="input-group" style="flex:1;min-width:160px;"><label>Formato</label><select id="spi_cnpj_fmt"><option value="mascarado">Com máscara</option><option value="limpo">Sem máscara</option></select></div>
+                    <div class="input-group" style="flex:0;min-width:140px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="spi_cnpj_alpha"> AlfanumÃ©rico (A-Z)</label></div>
             </div>
             <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="Geradores.gerarCNPJ()">🎲 Gerar</button><button class="btn btn-secondary" onclick="Geradores.copiar('spi_cnpj_out')">📋 Copiar</button></div>
         </div>

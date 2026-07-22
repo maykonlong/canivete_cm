@@ -2664,6 +2664,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const d2=(()=>{let s=0;for(let i=0;i<arr.length;i++)s+=arr[i]*p2[i];s+=d1*p2[12];return s%11<2?0:11-(s%11)})();
         return [...arr,d1,d2].join('');
     }
+    const _CHARS='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    function _randChar(){return _CHARS[_rand(0,35)];}
+    function _charVal(c){return c>='0'&&c<='9'?parseInt(c):c.charCodeAt(0)-55;}
+    function _calcDVAlfaCPF(digits,peso){
+        let s=0;for(let i=0;i<digits.length;i++)s+=_charVal(digits[i])*(peso-i);
+        return s%11<2?0:11-(s%11);
+    }
+    function _gerarCPFAlfa(){
+        const base=Array.from({length:9},()=>_randChar());
+        const d1=_calcDVAlfaCPF(base,10);
+        const d2=_calcDVAlfaCPF([...base,String(d1)],11);
+        return [...base,d1,d2].join('');
+    }
+    function _gerarCNPJAlfa(filial){
+        const p1=[5,4,3,2,9,8,7,6,5,4,3,2],p2=[6,5,4,3,2,9,8,7,6,5,4,3,2];
+        const base=Array.from({length:8},()=>_randChar());
+        const filArr=String(filial).padStart(4,'0').split('');
+        const arr=[...base,...filArr];
+        const d1=(()=>{let s=0;for(let i=0;i<arr.length;i++)s+=_charVal(arr[i])*p1[i];return s%11<2?0:11-(s%11)})();
+        const d2=(()=>{let s=0;for(let i=0;i<arr.length;i++)s+=_charVal(arr[i])*p2[i];s+=d1*p2[12];return s%11<2?0:11-(s%11)})();
+        return [...arr,d1,d2].join('');
+    }
     const _NOMES=['Ana','João','Maria','Pedro','Lucas','Julia','Gabriel','Beatriz','Matheus','Larissa','Rafael','Camila','Bruno','Amanda','Felipe','Letícia','Gustavo','Isabela','Leonardo','Mariana'];
     const _SOBR=['Silva','Santos','Oliveira','Souza','Pereira','Costa','Rodrigues','Almeida','Nascimento','Lima'];
     const _CID=['São Paulo','Rio de Janeiro','Belo Horizonte','Brasília','Salvador','Curitiba','Porto Alegre','Recife','Fortaleza','Manaus'];
