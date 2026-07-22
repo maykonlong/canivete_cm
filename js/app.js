@@ -1497,6 +1497,64 @@ document.addEventListener('DOMContentLoaded', () => {
         const passPanel = document.getElementById('convert_pass_panel');
         const extraPanel = document.getElementById('convert_extra_panel');
 
+        // Smart upload for conversion input — intercept binary files (PFX)
+        const convertUploadBtn = document.querySelector('#cert_convert .upload-btn[data-target="convert_input"]');
+        if (convertUploadBtn) {
+            convertUploadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const fi = document.createElement('input');
+                fi.type = 'file';
+                fi.accept = '.cer,.crt,.pem,.pfx,.p12,.key,.der';
+                fi.onchange = (ev) => {
+                    const file = ev.target.files[0];
+                    if (!file) return;
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    const isBinary = ['pfx', 'p12', 'der', 'cer'].includes(ext);
+                    if (isBinary) {
+                        const reader = new FileReader();
+                        reader.onload = (rev) => {
+                            const b64 = rev.target.result.split(',')[1];
+                            document.getElementById('convert_input').value = b64;
+                            // Auto-select PFX conversion type
+                            if (ext === 'pfx' || ext === 'p12') {
+                                convertType.value = 'pfx_to_pem';
+                                convertType.dispatchEvent(new Event('change'));
+                            }
+                            showMessage('certs_msg', `"${file.name}" carregado (${(file.size / 1024).toFixed(1)} KB).`);
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        const reader = new FileReader();
+                        reader.onload = (rev) => {
+                            document.getElementById('convert_input').value = rev.target.result;
+                            showMessage('certs_msg', `"${file.name}" carregado.`);
+                        };
+                        reader.readAsText(file);
+                    }
+                };
+                fi.click();
+            }, true);
+        }
+
+        // Auto-detect PFX in conversion input — show password panel
+        document.getElementById('convert_input').addEventListener('input', () => {
+            const val = document.getElementById('convert_input').value.trim();
+            if (!val) return;
+            // If content looks like PFX (base64 without PEM headers), auto-select PFX type
+            if (!val.includes('BEGIN') && !val.includes('PRIVATE KEY')) {
+                try {
+                    forge.asn1.fromDer(forge.util.decode64(val));
+                    // Looks like valid DER/PFX - auto-select if current type isn't PFX-related
+                    const v = convertType.value;
+                    if (!v.startsWith('pfx_') && v !== 'pem_to_pfx') {
+                        convertType.value = 'pfx_to_pem';
+                        convertType.dispatchEvent(new Event('change'));
+                    }
+                } catch (_) {}
+            }
+        });
+
         // Show/hide extra panels based on conversion type
         convertType.addEventListener('change', () => {
             const v = convertType.value;
