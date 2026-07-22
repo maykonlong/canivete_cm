@@ -2774,14 +2774,15 @@ document.addEventListener('DOMContentLoaded', () => {
         gerarPix() {
             const tipo=document.getElementById('spi_pix_tipo')?.value||'cpf';
             const qtd=parseInt(document.getElementById('spi_pix_qtd')?.value)||1;
+            const alpha=document.getElementById('spi_pix_alpha')?.checked;
             const el=document.getElementById('spi_pix_out');
             if(!el)return;
             el.innerHTML='';
             for(let i=0;i<qtd;i++){
                 let chave='';
                 switch(tipo){
-                    case'cpf':chave=_gerarCPFNum();break;
-                    case'cnpj':chave=_gerarCNPJNum(_rand(1,9999));break;
+                    case'cpf':chave=alpha?_gerarCPFAlfa():_gerarCPFNum();break;
+                    case'cnpj':chave=alpha?_gerarCNPJAlfa(_rand(1,9999)):_gerarCNPJNum(_rand(1,9999));break;
                     case'email':chave=`teste${_rand(1000,9999)}@exemplo${_rand(1,99)}.com.br`;break;
                     case'telefone':chave=`+55${_rand(11,99)}9${_rand(10000000,99999999)}`;break;
                     case'evp':chave=_uuid();break;
@@ -2905,5 +2906,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     };
+    // Show/hide PIX alpha checkbox based on type
+    const pixTipo = document.getElementById('spi_pix_tipo');
+    const pixAlphaWrap = document.getElementById('pix_alpha_wrap');
+    if (pixTipo && pixAlphaWrap) {
+        const togglePixAlpha = () => {
+            const t = pixTipo.value;
+            pixAlphaWrap.style.display = (t === 'cpf' || t === 'cnpj') ? '' : 'none';
+            if (t !== 'cpf' && t !== 'cnpj') {
+                const cb = document.getElementById('spi_pix_alpha');
+                if (cb) cb.checked = false;
+            }
+        };
+        pixTipo.addEventListener('change', togglePixAlpha);
+        togglePixAlpha();
+    }
+
     Logger.info('Geradores module initialized');
 });

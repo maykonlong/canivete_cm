@@ -1121,6 +1121,7 @@
             <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
                 <div class="input-group" style="flex:1;min-width:140px;"><label>Tipo de Chave</label><select id="spi_pix_tipo"><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">Email</option><option value="telefone">Telefone</option><option value="evp">EVP (UUID)</option></select></div>
                 <div class="input-group" style="flex:1;min-width:80px;"><label>Qtd</label><input type="number" id="spi_pix_qtd" value="1" min="1" max="100"></div>
+                <div class="input-group" style="flex:0;min-width:140px;" id="pix_alpha_wrap"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="spi_pix_alpha"> Alfanumérico (A-Z)</label></div>
             </div>
             <div class="flex-row" style="gap:0.5rem;margin-top:0.75rem;">
                 <button class="btn btn-primary" onclick="Geradores.gerarPix()">🎲 Gerar Chaves</button>

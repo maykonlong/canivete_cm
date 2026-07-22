@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 git add -A
-git commit -m "feat: fake data PF com seletor de genero (M/F/Aleatorio)"
+git commit -m "feat: PIX chaves com opcao alfanumerico para CPF/CNPJ, checkbox dinamico"
 git push origin main 2>&1
 echo.
 echo === DONE ===
