@@ -2065,6 +2065,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Security badge: tap to toggle on mobile
+        const secBadge = document.getElementById('securityBadge');
+        if (secBadge) {
+            secBadge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                secBadge.classList.toggle('active');
+            });
+            document.addEventListener('click', () => secBadge.classList.remove('active'));
+        }
+
         Logger.info('Certificados SSL tool initialized');
     };
 

@@ -258,6 +258,75 @@ body.sidebar-open .sidebar-overlay {
 
 /* Embed de ferramentas externas (ex.: Código de Barras) */
 /* Cert Tabs */
+/* Security Badge */
+.security-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 20px;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    position: relative;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--success);
+    transition: all 0.2s;
+    user-select: none;
+}
+.security-badge:hover,
+.security-badge:focus {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: var(--success);
+}
+.security-badge .badge-text {
+    white-space: nowrap;
+}
+.security-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 100;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    width: 340px;
+    max-width: 90vw;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    color: var(--text);
+    line-height: 1.6;
+}
+.security-tooltip li {
+    margin-bottom: 0.3rem;
+}
+/* Desktop: hover */
+@media (hover: hover) {
+    .security-badge:hover .security-tooltip {
+        display: block;
+    }
+}
+/* Mobile: tap to toggle */
+@media (hover: none) {
+    .security-badge.active .security-tooltip {
+        display: block;
+    }
+}
+/* Close tooltip when clicking outside */
+.security-badge .security-tooltip::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 1rem;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid var(--border);
+}
+
 .cert-tabs {
     display: flex;
     gap: 0;
