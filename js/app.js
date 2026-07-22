@@ -188,6 +188,16 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(a.href);
     };
 
+    // Auto-add tooltips to all toolbar buttons
+    document.querySelectorAll('.btn-toolbar').forEach(btn => {
+        if (!btn.title) {
+            if (btn.classList.contains('upload-btn')) btn.title = 'Upload arquivo';
+            else if (btn.classList.contains('download-btn')) btn.title = 'Baixar';
+            else if (btn.classList.contains('copy-btn')) btn.title = 'Copiar';
+            else if (btn.classList.contains('clear-btn')) btn.title = 'Limpar';
+        }
+    });
+
     // Initialize Toolbars
     document.querySelectorAll('.btn-toolbar').forEach(btn => {
         btn.addEventListener('click', () => {
