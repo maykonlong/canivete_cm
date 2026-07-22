@@ -1153,7 +1153,8 @@
         <div class="page-header"><h1>Dados Fake — Gerador para Homologação</h1><p>Gere dados completos e realistas de Pessoa Física e Jurídica brasileira para testes.</p></div>
         <div class="panel">
             <h3>🎲 Gerar Dados</h3>
-            <div class="flex-row" style="gap:0.75rem;flex-wrap:wrap;">
+            <div class="flex-row" style="gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+                <div class="input-group" style="flex:0;min-width:120px;"><label>Gênero PF</label><select id="fake_genero"><option value="aleatorio">Aleatório</option><option value="m">👨 Masculino</option><option value="f">👩 Feminino</option></select></div>
                 <button class="btn btn-primary" onclick="Geradores.gerarFakePF()" style="flex:1;min-width:180px;">👤 Pessoa Física</button>
                 <button class="btn btn-primary" onclick="Geradores.gerarFakePJ()" style="flex:1;min-width:180px;">🏢 Pessoa Jurídica</button>
             </div>

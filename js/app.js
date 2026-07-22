@@ -2685,7 +2685,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const d2=(()=>{let s=0;for(let i=0;i<arr.length;i++)s+=_charVal(arr[i])*p2[i];s+=d1*p2[12];return s%11<2?0:11-(s%11)})();
         return [...arr,d1,d2].join('');
     }
-    const _NOMES=['Ana','João','Maria','Pedro','Lucas','Julia','Gabriel','Beatriz','Matheus','Larissa','Rafael','Camila','Bruno','Amanda','Felipe','Letícia','Gustavo','Isabela','Leonardo','Mariana'];
+    const _NOMES_M=['João','Pedro','Lucas','Gabriel','Matheus','Rafael','Bruno','Felipe','Gustavo','Leonardo','Carlos','Miguel','André','Fernando','Thiago','Eduardo','Diego','Henrique','Vinícius','Rodrigo'];
+    const _NOMES_F=['Ana','Maria','Julia','Beatriz','Larissa','Camila','Amanda','Letícia','Isabela','Mariana','Carolina','Fernanda','Patrícia','Juliana','Aline','Vanessa','Priscila','Bianca','Raquel','Daniela'];
+    const _NOMES=[..._NOMES_M,..._NOMES_F];
     const _SOBR=['Silva','Santos','Oliveira','Souza','Pereira','Costa','Rodrigues','Almeida','Nascimento','Lima'];
     const _CID=['São Paulo','Rio de Janeiro','Belo Horizonte','Brasília','Salvador','Curitiba','Porto Alegre','Recife','Fortaleza','Manaus'];
     const _UF=['SP','RJ','MG','BA','PR','RS','PE','CE','AM','GO'];
@@ -2838,7 +2840,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if(el) el.textContent=xml;
         },
         gerarFakePF() {
-            const nome=_pick(_NOMES),sob=_pick(_SOBR);
+            const genero=document.getElementById('fake_genero')?.value||'aleatorio';
+            const lista=genero==='m'?_NOMES_M:genero==='f'?_NOMES_F:_NOMES;
+            const nome=_pick(lista),sob=_pick(_SOBR);
             const fields=[
                 {label:'Nome Completo',value:`${nome} ${sob}`},
                 {label:'CPF',value:_gerarCPFNum()},
