@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // UI & Navigation Logic
     // ==========================================
     const navItems = document.querySelectorAll('.nav-item');
-    const navCategories = document.querySelectorAll('.nav-category');
+    const navGroups = document.querySelectorAll('.nav-group');
     const toolViews = document.querySelectorAll('.tool-view');
     const mobileToggle = document.getElementById('mobileToggle');
     const sidebarClose = document.getElementById('sidebarClose');
@@ -88,17 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (match) visibleCount++;
             });
 
-            navCategories.forEach((cat) => {
-                let next = cat.nextElementSibling;
-                let hasVisible = false;
-                while (next && !next.classList.contains('nav-category')) {
-                    if (next.classList.contains('nav-item') && !next.classList.contains('nav-hidden')) {
-                        hasVisible = true;
-                        break;
-                    }
-                    next = next.nextElementSibling;
-                }
-                cat.classList.toggle('nav-hidden', !hasVisible);
+            navGroups.forEach((group) => {
+                const items = group.querySelectorAll('.nav-item');
+                const hasVisible = Array.from(items).some(i => !i.classList.contains('nav-hidden'));
+                const label = group.querySelector('.nav-group-label');
+                group.style.display = (query && !hasVisible) ? 'none' : '';
+                if (label) label.style.display = (query && !hasVisible) ? 'none' : '';
             });
 
             if (navSearchEmpty) navSearchEmpty.hidden = visibleCount > 0;
@@ -2612,4 +2607,221 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     Logger.info('Command Palette + Theme Toggle initialized');
+
+    // ==========================================
+    // SPI Test Tools Module
+    // ==========================================
+    const _rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const _randChar = (chars) => chars[_rand(0, chars.length - 1)];
+    const _pad = (n, len) => String(n).padStart(len, '0');
+    const _uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16); });
+
+    function _calcDVCPF(digits, peso) {
+        let sum = 0;
+        for (let i = 0; i < digits.length; i++) sum += parseInt(digits[i]) * (peso - i);
+        return sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    }
+    function _gerarCPFNum() {
+        const n = Array.from({length: 9}, () => _rand(0, 9));
+        const d1 = _calcDVCPF(n, 10);
+        const d2 = _calcDVCPF([...n, d1], 11);
+        return [...n, d1, d2].join('');
+    }
+    function _isValidCPF(cpf) {
+        cpf = cpf.replace(/[\.\-\s]/g, '').toUpperCase();
+        if (cpf.length !== 11) return { valid: false, reason: 'Deve ter 11 caracteres' };
+        const isAlpha = /[A-Z]/.test(cpf);
+        if (isAlpha) {
+            const charVal = c => c >= '0' && c <= '9' ? parseInt(c) : c.charCodeAt(0) - 55;
+            const calcDV = (d, p) => { let s=0; for(let i=0;i<d.length;i++) s+=charVal(d[i])*(p-i); return s%11<2?0:11-(s%11); };
+            const base = cpf.slice(0,9);
+            if (parseInt(cpf[9])!==calcDV(base,10)||parseInt(cpf[10])!==calcDV([...base,cpf[9]],11)) return {valid:false,reason:'DV inválido'};
+            return {valid:true,type:'Alfanumérico'};
+        }
+        if (/^(\d)\1{10}$/.test(cpf)) return {valid:false,reason:'Todos dígitos iguais'};
+        const n=cpf.split('').map(Number);
+        if(n[9]!==_calcDVCPF(n.slice(0,9),10)||n[10]!==_calcDVCPF(n.slice(0,10),11)) return {valid:false,reason:'DV inválido'};
+        return {valid:true,type:'Numérico'};
+    }
+    function _isValidCNPJ(cnpj) {
+        cnpj=cnpj.replace(/[\.\-\/\s]/g,'').toUpperCase();
+        if(cnpj.length!==14) return {valid:false,reason:'Deve ter 14 caracteres'};
+        const isAlpha=/[A-Z]/.test(cnpj);
+        const charVal=c=>c>='0'&&c<='9'?parseInt(c):c.charCodeAt(0)-55;
+        const p1=[5,4,3,2,9,8,7,6,5,4,3,2],p2=[6,5,4,3,2,9,8,7,6,5,4,3,2];
+        const calcDV=(d,p)=>{let s=0;for(let i=0;i<d.length;i++)s+=charVal(d[i])*p[i];return s%11<2?0:11-(s%11)};
+        if(!isAlpha&&/^(\d)\1{13}$/.test(cnpj)) return {valid:false,reason:'Todos dígitos iguais'};
+        const a=cnpj.split('');
+        if(charVal(a[12])!==calcDV(a.slice(0,12),p1)||charVal(a[13])!==calcDV(a.slice(0,13),p2)) return {valid:false,reason:'DV inválido'};
+        return {valid:true,type:isAlpha?'Alfanumérico':'Numérico'};
+    }
+    function _gerarCNPJNum(filial) {
+        const base=Array.from({length:8},()=>_rand(0,9));
+        const filArr=String(filial).padStart(4,'0').split('').map(Number);
+        const arr=[...base,...filArr];
+        const p1=[5,4,3,2,9,8,7,6,5,4,3,2],p2=[6,5,4,3,2,9,8,7,6,5,4,3,2];
+        const d1=(()=>{let s=0;for(let i=0;i<arr.length;i++)s+=arr[i]*p1[i];return s%11<2?0:11-(s%11)})();
+        const d2=(()=>{let s=0;for(let i=0;i<arr.length;i++)s+=arr[i]*p2[i];s+=d1*p2[12];return s%11<2?0:11-(s%11)})();
+        return [...arr,d1,d2].join('');
+    }
+    const _NOMES=['Ana','João','Maria','Pedro','Lucas','Julia','Gabriel','Beatriz','Matheus','Larissa','Rafael','Camila','Bruno','Amanda','Felipe','Letícia','Gustavo','Isabela','Leonardo','Mariana'];
+    const _SOBR=['Silva','Santos','Oliveira','Souza','Pereira','Costa','Rodrigues','Almeida','Nascimento','Lima'];
+    const _CID=['São Paulo','Rio de Janeiro','Belo Horizonte','Brasília','Salvador','Curitiba','Porto Alegre','Recife','Fortaleza','Manaus'];
+    const _UF=['SP','RJ','MG','BA','PR','RS','PE','CE','AM','GO'];
+    const _LOG=['Rua','Avenida','Travessa'];
+    const _RUA=['das Flores','da Paz','Brasil','São Paulo','Paulista','Atlântica','Augusta'];
+    const _SEG=['Tecnologia','Comércio','Serviços','Indústria','Alimentação','Saúde','Educação'];
+    const _ATV=['Consultoria','Desenvolvimento','Soluções','Assessoria','Distribuidora'];
+    const _pick=a=>a[_rand(0,a.length-1)];
+
+    window.SPI = {
+        copiar(id) {
+            const el=document.getElementById(id);
+            if(!el)return;
+            navigator.clipboard.writeText(el.textContent||el.innerText).then(()=>showToast('Copiado!')).catch(()=>{});
+        },
+        gerarCPF() {
+            const qtd=parseInt(document.getElementById('spi_cpf_qtd')?.value)||10;
+            const fmt=document.getElementById('spi_cpf_fmt')?.value||'limpo';
+            const alpha=document.getElementById('spi_cpf_alpha')?.checked;
+            const out=[];
+            for(let i=0;i<qtd;i++){
+                let cpf=_gerarCPFNum();
+                if(fmt==='mascarado') cpf=cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+                out.push(cpf);
+            }
+            const el=document.getElementById('spi_cpf_out');
+            if(el) el.textContent=out.join('\n');
+        },
+        validarCPFLive() {
+            const input=document.getElementById('spi_cpf_val')?.value?.trim();
+            const div=document.getElementById('spi_cpf_val_r');
+            if(!div)return;
+            if(!input){div.innerHTML='';return;}
+            const r=_isValidCPF(input);
+            div.innerHTML=r.valid
+                ?`<div style="padding:0.5rem;color:var(--success);">✅ ${r.type} válido</div>`
+                :`<div style="padding:0.5rem;color:var(--danger);">❌ ${r.reason}</div>`;
+        },
+        gerarCNPJ() {
+            const qtd=parseInt(document.getElementById('spi_cnpj_qtd')?.value)||10;
+            const filial=parseInt(document.getElementById('spi_cnpj_filial')?.value)||1;
+            const fmt=document.getElementById('spi_cnpj_fmt')?.value||'limpo';
+            const out=[];
+            for(let i=0;i<qtd;i++){
+                let cnpj=_gerarCNPJNum(filial);
+                if(fmt==='mascarado') cnpj=cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');
+                out.push(cnpj);
+            }
+            const el=document.getElementById('spi_cnpj_out');
+            if(el) el.textContent=out.join('\n');
+        },
+        validarCNPJLive() {
+            const input=document.getElementById('spi_cnpj_val')?.value?.trim();
+            const div=document.getElementById('spi_cnpj_val_r');
+            if(!div)return;
+            if(!input){div.innerHTML='';return;}
+            const r=_isValidCNPJ(input);
+            div.innerHTML=r.valid
+                ?`<div style="padding:0.5rem;color:var(--success);">✅ ${r.type} válido</div>`
+                :`<div style="padding:0.5rem;color:var(--danger);">❌ ${r.reason}</div>`;
+        },
+        gerarPix() {
+            const tipo=document.getElementById('spi_pix_tipo')?.value||'cpf';
+            const qtd=parseInt(document.getElementById('spi_pix_qtd')?.value)||5;
+            const chaves=[];
+            for(let i=0;i<qtd;i++){
+                switch(tipo){
+                    case'cpf':chaves.push(_gerarCPFNum());break;
+                    case'cnpj':chaves.push(_gerarCNPJNum(_rand(1,9999)));break;
+                    case'email':chaves.push(`teste${_rand(1000,9999)}@exemplo${_rand(1,99)}.com.br`);break;
+                    case'telefone':chaves.push(`+55${_rand(11,99)}9${_rand(10000000,99999999)}`);break;
+                    case'evp':chaves.push(_uuid());break;
+                }
+            }
+            const el=document.getElementById('spi_pix_out');
+            if(el) el.textContent=chaves.join('\n');
+        },
+        identificarPix() {
+            const input=document.getElementById('spi_pix_id')?.value?.trim();
+            const div=document.getElementById('spi_pix_id_r');
+            if(!div)return;
+            if(!input){div.innerHTML='';return;}
+            let tipo='Desconhecido',val='';
+            const clean=input.replace(/[\.\-\/\+\s()]/g,'');
+            if(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(input)){tipo='EVP (UUID)';val='UUID v4 válido';}
+            else if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input)){tipo='Email';val='Formato válido';}
+            else if(clean.length===14&&/^\d{14}$/.test(clean)){const r=_isValidCNPJ(clean);if(r.valid){tipo='CNPJ';val=r.type+' válido';}}
+            else if(clean.length===11&&/^\d{11}$/.test(clean)){const r=_isValidCPF(clean);if(r.valid){tipo='CPF';val=r.type+' válido';}}
+            else if(/^(55)?\d{10,11}$/.test(clean)){tipo='Telefone';val='Possível telefone';}
+            div.innerHTML=`<div style="padding:0.5rem;"><span style="background:rgba(99,102,241,0.15);color:var(--primary);padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;">${tipo}</span> <span style="font-size:0.85rem;color:var(--text-muted);">${val}</span></div>`;
+        },
+        gerarPacs008() {
+            const now=new Date().toISOString().replace(/\.\d{3}Z$/,'.000Z');
+            const valor=parseFloat(document.getElementById('iso_valor')?.value)||100;
+            const ispb=document.getElementById('iso_ispb_c')?.value||'00000000';
+            const nome=document.getElementById('iso_nome_c')?.value||'RECEBEDOR TESTE';
+            const doc=document.getElementById('iso_doc_c')?.value||'00000000000191';
+            const e2e=`E2E${_uuid().replace(/-/g,'').slice(0,28).toUpperCase()}`;
+            const txid=`TX${_uuid().replace(/-/g,'').slice(0,23).toUpperCase()}`;
+            const xml=`<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+  <FIToFICstmrCdtTrf>
+    <GrpHdr>
+      <MsgId>MSG${_uuid().replace(/-/g,'').slice(0,28).toUpperCase()}</MsgId>
+      <CreDtTm>${now}</CreDtTm>
+      <NbOfTxs>1</NbOfTxs>
+      <SttlmInf><SttlmMtd>INDA</SttlmMtd></SttlmInf>
+    </GrpHdr>
+    <CdtTrfTxInf>
+      <PmtId>
+        <InstrId>INSTR${_uuid().replace(/-/g,'').slice(0,23).toUpperCase()}</InstrId>
+        <EndToEndId>${e2e}</EndToEndId>
+        <TxId>${txid}</TxId>
+      </PmtId>
+      <PmtTpInf><SvcLvl><Cd>PRPT</Cd></SvcLvl><LclInstrm><Cd>PIX</Cd></LclInstrm></PmtTpInf>
+      <IntrBkSttlmAmt Ccy="BRL">${valor.toFixed(2)}</IntrBkSttlmAmt>
+      <ChrgBr>SLEV</ChrgBr>
+      <InstgAgt><FinInstnId><ClrSysMmbId><MmbId>${ispb}</MmbId></ClrSysMmbId></FinInstnId></InstgAgt>
+      <Cdtr><Nm>${nome}</Nm></Cdtr>
+      <CdtrAcct><Id><Othr><Id>${doc}</Id></Othr></Id></CdtrAcct>
+      <RmtInf><Ustrd>Pagamento SPI teste - ${txid}</Ustrd></RmtInf>
+    </CdtTrfTxInf>
+  </FIToFICstmrCdtTrf>
+</Document>`;
+            const el=document.getElementById('iso_out');
+            if(el) el.textContent=xml;
+        },
+        gerarFakePF() {
+            const nome=_pick(_NOMES),sob=_pick(_SOBR);
+            const data={
+                nome_completo:`${nome} ${sob}`,
+                cpf:_gerarCPFNum(),
+                rg:`${_pad(_rand(10000000,99999999),8)}-${_rand(0,9)}`,
+                data_nascimento:`${_pad(_rand(1,28),2)}/${_pad(_rand(1,12),2)}/${_rand(1960,2005)}`,
+                telefone:`(${_pad(_rand(11,99),2)}) 9${_pad(_rand(1000,9999),4)}-${_pad(_rand(1000,9999),4)}`,
+                email:`${nome.toLowerCase()}.${sob.toLowerCase()}${_rand(1,99)}@email.com`,
+                endereco:{logradouro:`${_pick(_LOG)} ${_pick(_RUA)}`,_num:_rand(1,9999),bairro:'Centro',cidade:_pick(_CID),uf:_pick(_UF),cep:`${_pad(_rand(10000,99999),5)}${_pad(_rand(0,999),3)}`},
+                banco:{ispb:_pad(_rand(0,99999999),8),agencia:_pad(_rand(1,9999),4),conta:_pad(_rand(1,9999999),7)}
+            };
+            const el=document.getElementById('fake_out');
+            if(el) el.textContent=JSON.stringify(data,null,2);
+        },
+        gerarFakePJ() {
+            const nf=`${_pick(_SOBR)} ${_pick(_ATV)}`;
+            const data={
+                razao_social:`${nf} ${_pick(['LTDA','EIRELI','S.A.','ME'])}`,
+                nome_fantasia:nf,
+                cnpj:_gerarCNPJNum(_rand(1,99)),
+                segmento:_pick(_SEG),
+                telefone:`(${_pad(_rand(11,99),2)}) ${_pad(_rand(2000,4999),4)}-${_pad(_rand(1000,9999),4)}`,
+                email:`contato@${nf.toLowerCase().replace(/\s+/g,'')}.com.br`,
+                endereco:{logradouro:`${_pick(_LOG)} ${_pick(_RUA)}`,numero:_rand(1,9999),cidade:_pick(_CID),uf:_pick(_UF)},
+                representante:{nome:`${_pick(_NOMES)} ${_pick(_SOBR)}`,cpf:_gerarCPFNum(),cargo:_pick(['Sócio','Diretor','Presidente'])}
+            };
+            const el=document.getElementById('fake_out');
+            if(el) el.textContent=JSON.stringify(data,null,2);
+        }
+    };
+    Logger.info('SPI Test Tools module initialized');
 });

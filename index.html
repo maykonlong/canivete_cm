@@ -171,6 +171,30 @@
             </div>
 
             <div class="nav-group">
+                <div class="nav-group-label">Testes SPI</div>
+                <a href="#" class="nav-item" data-target="view_cpf">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                    CPF
+                </a>
+                <a href="#" class="nav-item" data-target="view_cnpj">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 8h20M8 3v18"/></svg>
+                    CNPJ
+                </a>
+                <a href="#" class="nav-item" data-target="view_pix">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+                    Chaves PIX
+                </a>
+                <a href="#" class="nav-item" data-target="view_iso">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    ISO 20022
+                </a>
+                <a href="#" class="nav-item" data-target="view_fakedata">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Dados Fake
+                </a>
+            </div>
+
+            <div class="nav-group">
                 <div class="nav-group-label">Formatadores & Validadores</div>
             <a href="#" class="nav-item" data-target="view_json">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
@@ -1047,6 +1071,75 @@
             </div>
             <div class="alert" id="xml_msg"></div>
         </section>
+
+    <!-- ═══ SPI: CPF ═══ -->
+    <section id="view_cpf" class="tool-view">
+        <div class="page-header"><h1>CPF — Gerador & Validador</h1><p>Gere CPFs válidos ou valide existentes. Suporte numérico e alfanumérico.</p></div>
+        <div class="panel">
+            <h3>Configuração</h3>
+            <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
+                <div class="input-group" style="flex:1;min-width:120px;"><label>Quantidade</label><input type="number" id="spi_cpf_qtd" value="10" min="1" max="1000"></div>
+                <div class="input-group" style="flex:1;min-width:180px;"><label>Formato</label><select id="spi_cpf_fmt"><option value="mascarado">Com máscara</option><option value="limpo">Sem máscara</option></select></div>
+                <div class="input-group" style="flex:1;min-width:180px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="checkbox" id="spi_cpf_alpha"> Alfanumérico</label></div>
+            </div>
+            <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="SPI.gerarCPF()">🎲 Gerar</button><button class="btn btn-secondary" onclick="SPI.copiar('spi_cpf_out')">📋 Copiar</button></div>
+        </div>
+        <div class="panel"><h3>Resultado</h3><div class="output" id="spi_cpf_out">Clique em Gerar.</div></div>
+        <div class="panel"><h3>Validar CPF</h3><div class="input-group"><label>CPF</label><input type="text" id="spi_cpf_val" placeholder="529.982.247-25" oninput="SPI.validarCPFLive()"><div id="spi_cpf_val_r"></div></div></div>
+    </section>
+
+    <!-- ═══ SPI: CNPJ ═══ -->
+    <section id="view_cnpj" class="tool-view">
+        <div class="page-header"><h1>CNPJ — Gerador & Validador</h1><p>Numérico e alfanumérico (Lei 14.478/2022).</p></div>
+        <div class="panel">
+            <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
+                <div class="input-group" style="flex:1;min-width:120px;"><label>Qtd</label><input type="number" id="spi_cnpj_qtd" value="10"></div>
+                <div class="input-group" style="flex:1;min-width:120px;"><label>Filial</label><input type="number" id="spi_cnpj_filial" value="1" min="1" max="9999"></div>
+                <div class="input-group" style="flex:1;min-width:160px;"><label>Tipo</label><select id="spi_cnpj_tipo"><option value="numerico">Numérico</option><option value="alfa">Alfanumérico</option></select></div>
+                <div class="input-group" style="flex:1;min-width:160px;"><label>Formato</label><select id="spi_cnpj_fmt"><option value="mascarado">Com máscara</option><option value="limpo">Sem máscara</option></select></div>
+            </div>
+            <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="SPI.gerarCNPJ()">🎲 Gerar</button><button class="btn btn-secondary" onclick="SPI.copiar('spi_cnpj_out')">📋 Copiar</button></div>
+        </div>
+        <div class="panel"><h3>Resultado</h3><div class="output" id="spi_cnpj_out">Clique em Gerar.</div></div>
+        <div class="panel"><h3>Validar CNPJ</h3><div class="input-group"><label>CNPJ</label><input type="text" id="spi_cnpj_val" placeholder="11.222.333/0001-81" oninput="SPI.validarCNPJLive()"><div id="spi_cnpj_val_r"></div></div></div>
+    </section>
+
+    <!-- ═══ SPI: Chaves PIX ═══ -->
+    <section id="view_pix" class="tool-view">
+        <div class="page-header"><h1>Chaves PIX — Gerador & Identificador</h1><p>Gere chaves PIX por tipo ou identifique o tipo automaticamente.</p></div>
+        <div class="panel">
+            <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
+                <div class="input-group" style="flex:1;min-width:150px;"><label>Tipo</label><select id="spi_pix_tipo"><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">Email</option><option value="telefone">Telefone</option><option value="evp">EVP (UUID)</option></select></div>
+                <div class="input-group" style="flex:1;min-width:100px;"><label>Qtd</label><input type="number" id="spi_pix_qtd" value="5"></div>
+            </div>
+            <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="SPI.gerarPix()">🎲 Gerar</button><button class="btn btn-secondary" onclick="SPI.copiar('spi_pix_out')">📋 Copiar</button></div>
+        </div>
+        <div class="panel"><h3>Resultado</h3><div class="output" id="spi_pix_out">Selecione o tipo e clique em Gerar.</div></div>
+        <div class="panel"><h3>Identificar Tipo</h3><div class="input-group"><label>Cole a chave PIX</label><input type="text" id="spi_pix_id" oninput="SPI.identificarPix()"><div id="spi_pix_id_r"></div></div></div>
+    </section>
+
+    <!-- ═══ SPI: ISO 20022 ═══ -->
+    <section id="view_iso" class="tool-view">
+        <div class="page-header"><h1>ISO 20022 — Templates SPI</h1><p>Gere payloads XML pacs.008 e pacs.002 com campos editáveis.</p></div>
+        <div class="panel">
+            <h3>pacs.008 — Customer Credit Transfer</h3>
+            <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
+                <div class="input-group" style="flex:1;min-width:200px;"><label>Valor (BRL)</label><input type="number" id="iso_valor" value="100.00" step="0.01"></div>
+                <div class="input-group" style="flex:1;min-width:200px;"><label>ISPB Credor</label><input type="text" id="iso_ispb_c" placeholder="00000000" maxlength="8"></div>
+                <div class="input-group" style="flex:1;min-width:200px;"><label>Nome Credor</label><input type="text" id="iso_nome_c" placeholder="Recebedor LTDA"></div>
+                <div class="input-group" style="flex:1;min-width:200px;"><label>Doc Credor</label><input type="text" id="iso_doc_c" placeholder="00000000000191"></div>
+            </div>
+            <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="SPI.gerarPacs008()">📄 Gerar pacs.008</button><button class="btn btn-secondary" onclick="SPI.copiar('iso_out')">📋 Copiar</button></div>
+        </div>
+        <div class="panel"><h3>XML</h3><div class="output" id="iso_out" style="white-space:pre;font-size:0.8rem;">Clique em Gerar.</div></div>
+    </section>
+
+    <!-- ═══ SPI: Dados Fake ═══ -->
+    <section id="view_fakedata" class="tool-view">
+        <div class="page-header"><h1>Dados Fake — Gerador para Homologação</h1><p>Dados completos de PF e PJ brasileiros.</p></div>
+        <div class="flex-row" style="gap:0.5rem;margin-bottom:1rem;"><button class="btn btn-primary" onclick="SPI.gerarFakePF()">🎲 Pessoa Física</button><button class="btn btn-primary" onclick="SPI.gerarFakePJ()">🎲 Pessoa Jurídica</button><button class="btn btn-secondary" onclick="SPI.copiar('fake_out')">📋 Copiar</button></div>
+        <div class="panel"><h3>Dados Gerados</h3><div class="output" id="fake_out" style="white-space:pre;">Clique em um dos botões acima.</div></div>
+    </section>
 
     <!-- ==========================================
          Tool: Certificados SSL
