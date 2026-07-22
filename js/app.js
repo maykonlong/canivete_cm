@@ -4,6 +4,18 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
+    // Theme Persistence (Dark/Light)
+    // ==========================================
+    try {
+        const savedTheme = localStorage.getItem('devtools_theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            const btn = document.getElementById('themeToggle');
+            if (btn) btn.innerHTML = savedTheme === 'dark' ? '🌙' : '☀️';
+        }
+    } catch (_) {}
+
+    // ==========================================
     // UI & Navigation Logic
     // ==========================================
     const navItems = document.querySelectorAll('.nav-item');

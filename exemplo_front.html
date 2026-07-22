@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canivete Suíço Dev — Redesign Prototype</title>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   DESIGN SYSTEM — Canivete Suíço Dev v3.0
+   Inspired by: Linear, Vercel, Shadcn UI, Stripe
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── CSS Custom Properties (Design Tokens) ── */
+:root {
+  /* Spacing Scale (4px base) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+
+  /* Border Radius */
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px;
+  --radius-xl: 16px; --radius-full: 9999px;
+
+  /* Typography Scale */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --text-xs: 0.75rem; --text-sm: 0.8125rem; --text-base: 0.875rem;
+  --text-lg: 1rem; --text-xl: 1.125rem; --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem; --text-4xl: 2.25rem;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Scale */
+  --z-dropdown: 50; --z-sticky: 100; --z-modal: 200;
+  --z-toast: 300; --z-tooltip: 400;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 64px;
+  --header-height: 56px;
+}
+
+/* ── Dark Theme (Default) ── */
+[data-theme="dark"] {
+  --bg-base: #09090b;
+  --bg-surface: #111113;
+  --bg-elevated: #18181b;
+  --bg-overlay: #1e1e21;
+  --bg-hover: rgba(255,255,255,0.04);
+  --bg-active: rgba(255,255,255,0.08);
+  --bg-subtle: rgba(255,255,255,0.03);
+
+  --border-default: #27272a;
+  --border-subtle: #1e1e21;
+  --border-strong: #3f3f46;
+
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --text-inverse: #09090b;
+
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-subtle: rgba(59,130,246,0.12);
+  --accent-text: #60a5fa;
+
+  --success: #22c55e;
+  --success-subtle: rgba(34,197,94,0.12);
+  --warning: #f59e0b;
+  --warning-subtle: rgba(245,158,11,0.12);
+  --error: #ef4444;
+  --error-subtle: rgba(239,68,68,0.12);
+  --info: #06b6d4;
+  --info-subtle: rgba(6,182,212,0.12);
+
+  --gradient-brand: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+
+  --shadow-color: rgba(0,0,0,0.4);
+  --backdrop: rgba(0,0,0,0.6);
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --bg-base: #ffffff;
+  --bg-surface: #fafafa;
+  --bg-elevated: #ffffff;
+  --bg-overlay: #f4f4f5;
+  --bg-hover: rgba(0,0,0,0.03);
+  --bg-active: rgba(0,0,0,0.06);
+  --bg-subtle: rgba(0,0,0,0.02);
+
+  --border-default: #e4e4e7;
+  --border-subtle: #f0f0f2;
+  --border-strong: #d4d4d8;
+
+  --text-primary: #09090b;
+  --text-secondary: #71717a;
+  --text-tertiary: #a1a1aa;
+  --text-inverse: #fafafa;
+
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-subtle: rgba(37,99,235,0.08);
+  --accent-text: #2563eb;
+
+  --success: #16a34a;
+  --success-subtle: rgba(22,163,74,0.08);
+  --warning: #d97706;
+  --warning-subtle: rgba(217,119,6,0.08);
+  --error: #dc2626;
+  --error-subtle: rgba(220,38,38,0.08);
+  --info: #0891b2;
+  --info-subtle: rgba(8,145,178,0.08);
+
+  --gradient-brand: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(0,0,0,0.02) 0%, transparent 100%);
+
+  --shadow-color: rgba(0,0,0,0.08);
+  --backdrop: rgba(0,0,0,0.3);
+}
+
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* ── Layout ── */
+.app-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: var(--header-height) 1fr;
+  height: 100vh;
+  transition: grid-template-columns var(--transition-slow);
+}
+
+.app-layout.sidebar-collapsed {
+  grid-template-columns: var(--sidebar-collapsed) 1fr;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR
+   ═══════════════════════════════════════════════════════════ */
+.sidebar {
+  grid-row: 1 / -1;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: var(--z-sticky);
+  transition: width var(--transition-slow);
+}
+
+.sidebar-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+  flex-shrink: 0;
+}
+
+.sidebar-logo {
+  width: 32px; height: 32px;
+  background: var(--gradient-brand);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-logo svg { width: 18px; height: 18px; color: white; }
+
+.sidebar-brand {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-brand span { color: var(--text-tertiary); font-weight: 400; }
+
+/* Search in sidebar */
+.sidebar-search {
+  margin: var(--space-3) var(--space-3) var(--space-2);
+  position: relative;
+}
+
+.sidebar-search input {
+  width: 100%;
+  height: 36px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3) 0 var(--space-8);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sidebar-search input::placeholder { color: var(--text-tertiary); }
+.sidebar-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+.sidebar-search .search-icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.sidebar-search .search-kbd {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  font-size: 10px; color: var(--text-tertiary);
+  background: var(--bg-overlay); border: 1px solid var(--border-default);
+  border-radius: 4px; padding: 1px 5px; font-family: var(--font-mono);
+}
+
+/* Nav */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-2);
+}
+
+.nav-group { margin-bottom: var(--space-2); }
+
+.nav-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-tertiary);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 7px var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 450;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  user-select: none;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+  font-weight: 550;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.nav-item .nav-icon {
+  width: 18px; height: 18px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.nav-item .nav-icon svg { width: 16px; height: 16px; }
+
+.nav-item .nav-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+/* Sidebar footer */
+.sidebar-footer {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border-default);
+  flex-shrink: 0;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.sidebar-user:hover { background: var(--bg-hover); }
+
+.sidebar-user .user-avatar {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.sidebar-user .user-info { flex: 1; min-width: 0; }
+.sidebar-user .user-name { font-size: var(--text-sm); font-weight: 550; color: var(--text-primary); }
+.sidebar-user .user-role { font-size: var(--text-xs); color: var(--text-tertiary); }
+
+/* ═══════════════════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════════════════ */
+.header {
+  height: var(--header-height);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-6);
+  gap: var(--space-4);
+  z-index: var(--z-sticky);
+}
+
+.header-left { display: flex; align-items: center; gap: var(--space-3); flex: 1; }
+
+.header-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.header-breadcrumb .bc-sep { color: var(--border-strong); }
+.header-breadcrumb .bc-current { color: var(--text-primary); font-weight: 550; }
+
+.header-right { display: flex; align-items: center; gap: var(--space-2); }
+
+.header-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.header-btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-strong); }
+
+.header-btn .badge-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 8px; height: 8px;
+  background: var(--error);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--bg-surface);
+}
+
+.header-btn svg { width: 18px; height: 18px; }
+
+/* Theme toggle */
+.theme-toggle {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle:hover { background: var(--bg-hover); color: var(--warning); }
+.theme-toggle svg { width: 18px; height: 18px; }
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN CONTENT
+   ═══════════════════════════════════════════════════════════ */
+.main-content {
+  overflow-y: auto;
+  padding: var(--space-6);
+  background: var(--bg-base);
+}
+
+/* ── Page Header ── */
+.page-header {
+  margin-bottom: var(--space-6);
+}
+
+.page-header h1 {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.page-header p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ── Stats Grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.stat-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  transition: all var(--transition-base);
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gradient-brand);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.stat-card:hover { border-color: var(--border-strong); }
+.stat-card:hover::before { opacity: 1; }
+
+.stat-card .stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.stat-card .stat-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.stat-card .stat-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.stat-card .stat-icon svg { width: 18px; height: 18px; }
+
+.stat-card .stat-icon.blue { background: var(--accent-subtle); color: var(--accent-text); }
+.stat-card .stat-icon.green { background: var(--success-subtle); color: var(--success); }
+.stat-card .stat-icon.orange { background: var(--warning-subtle); color: var(--warning); }
+.stat-card .stat-icon.red { background: var(--error-subtle); color: var(--error); }
+
+.stat-card .stat-value {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.stat-card .stat-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  font-weight: 550;
+  margin-top: var(--space-2);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.stat-change.up { background: var(--success-subtle); color: var(--success); }
+.stat-change.down { background: var(--error-subtle); color: var(--error); }
+
+/* ── Tools Grid ── */
+.tools-section { margin-bottom: var(--space-6); }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.section-header h2 {
+  font-size: var(--text-lg);
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.section-header .section-action {
+  font-size: var(--text-sm);
+  color: var(--accent-text);
+  cursor: pointer;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.section-header .section-action:hover { background: var(--accent-subtle); }
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.tool-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  group: true;
+}
+
+.tool-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.tool-card .tool-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--space-4);
+  font-size: 1.25rem;
+}
+
+.tool-card .tool-icon.blue { background: var(--accent-subtle); color: var(--accent-text); }
+.tool-card .tool-icon.green { background: var(--success-subtle); color: var(--success); }
+.tool-card .tool-icon.orange { background: var(--warning-subtle); color: var(--warning); }
+.tool-card .tool-icon.purple { background: rgba(139,92,246,0.12); color: #a78bfa; }
+.tool-card .tool-icon.cyan { background: var(--info-subtle); color: var(--info); }
+.tool-card .tool-icon.pink { background: rgba(236,72,153,0.12); color: #f472b6; }
+
+.tool-card .tool-icon svg { width: 22px; height: 22px; }
+
+.tool-card h3 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.tool-card p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.tool-card .tool-shortcut {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.tool-card .tool-arrow {
+  position: absolute;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  width: 20px; height: 20px;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all var(--transition-base);
+}
+
+.tool-card:hover .tool-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ── Tool View (Active Tool) ── */
+.tool-view {
+  display: none;
+  animation: slideUp 0.3s ease;
+}
+
+.tool-view.active { display: block; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Split layout for tools */
+.tool-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.tool-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.tool-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-subtle);
+}
+
+.tool-panel-header h3 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tool-panel-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.tool-panel-body {
+  flex: 1;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-panel textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 200px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.tool-panel textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+.tool-panel textarea::placeholder { color: var(--text-tertiary); }
+
+/* Convert actions center */
+.tool-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+}
+
+.btn svg { width: 16px; height: 16px; }
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  padding: 8px 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.btn-primary:hover { background: var(--accent-hover); box-shadow: var(--shadow-md); }
+
+.btn-secondary {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  padding: 8px 16px;
+}
+
+.btn-secondary:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+}
+
+.btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.btn-icon {
+  width: 32px; height: 32px;
+  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-default); }
+
+.btn-convert {
+  width: 100%;
+  min-width: 140px;
+  padding: 10px 16px;
+}
+
+/* ── Searchable Select ── */
+.search-select {
+  position: relative;
+}
+
+.search-select input {
+  width: 100%;
+  height: 40px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3) 0 var(--space-8);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.search-select input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+.search-select .dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: var(--z-dropdown);
+  display: none;
+}
+
+.search-select .dropdown.open { display: block; animation: fadeIn 0.15s ease; }
+
+.search-select .dropdown-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  padding: var(--space-2) var(--space-3);
+  position: sticky;
+  top: 0;
+  background: var(--bg-elevated);
+}
+
+.search-select .dropdown-item {
+  padding: 8px var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.search-select .dropdown-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.search-select .dropdown-item.selected { color: var(--accent-text); background: var(--accent-subtle); }
+.search-select .dropdown-item.suggested { color: var(--success); font-weight: 500; }
+.search-select .dropdown-divider { height: 1px; background: var(--border-default); margin: var(--space-1) 0; }
+
+/* ── Input Group ── */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.input-group label {
+  font-size: var(--text-sm);
+  font-weight: 550;
+  color: var(--text-primary);
+}
+
+.input-group .input-help {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.input-field {
+  height: 40px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+/* ── Toast ── */
+.toast-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.toast {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  animation: toastIn 0.3s ease;
+  min-width: 280px;
+}
+
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error { border-left: 3px solid var(--error); }
+.toast.warning { border-left: 3px solid var(--warning); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Command Palette ── */
+.cmd-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--backdrop);
+  z-index: var(--z-modal);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  backdrop-filter: blur(4px);
+}
+
+.cmd-palette-overlay.open { display: flex; }
+
+.cmd-palette {
+  width: 560px;
+  max-width: 90vw;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  animation: cmdIn 0.2s ease;
+}
+
+@keyframes cmdIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.cmd-palette .cmd-input {
+  width: 100%;
+  height: 52px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-default);
+  padding: 0 var(--space-5);
+  color: var(--text-primary);
+  font-size: var(--text-lg);
+  font-family: var(--font-sans);
+  outline: none;
+}
+
+.cmd-palette .cmd-input::placeholder { color: var(--text-tertiary); }
+
+.cmd-palette .cmd-results {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.cmd-palette .cmd-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.cmd-palette .cmd-item:hover,
+.cmd-palette .cmd-item.highlighted {
+  background: var(--bg-hover);
+}
+
+.cmd-palette .cmd-item .cmd-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-overlay);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.cmd-palette .cmd-item .cmd-icon svg { width: 16px; height: 16px; }
+
+.cmd-palette .cmd-item .cmd-label { flex: 1; font-size: var(--text-sm); color: var(--text-primary); }
+.cmd-palette .cmd-item .cmd-hint { font-size: var(--text-xs); color: var(--text-tertiary); font-family: var(--font-mono); }
+
+.cmd-palette .cmd-footer {
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.cmd-palette .cmd-footer kbd {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--backdrop);
+  z-index: var(--z-modal);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 440px;
+  max-width: 90vw;
+  padding: var(--space-6);
+  animation: cmdIn 0.2s ease;
+}
+
+.modal h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-2); }
+.modal p { font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-5); }
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+/* ── Security Badge ── */
+.security-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--success-subtle);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--success);
+}
+
+.security-badge svg { width: 14px; height: 14px; }
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+}
+
+.empty-state .empty-icon {
+  width: 64px; height: 64px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-overlay);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--space-4);
+  color: var(--text-tertiary);
+}
+
+.empty-state .empty-icon svg { width: 28px; height: 28px; }
+
+.empty-state h3 { font-size: var(--text-lg); font-weight: 600; margin-bottom: var(--space-1); }
+.empty-state p { font-size: var(--text-sm); color: var(--text-secondary); max-width: 360px; }
+
+/* ── Loading Skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-overlay) 25%, var(--bg-hover) 50%, var(--bg-overlay) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .sidebar.mobile-open {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    width: 100%;
+    max-width: 320px;
+  }
+  .tool-split { grid-template-columns: 1fr; }
+  .tool-actions { flex-direction: row; flex-wrap: wrap; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .tools-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .main-content { padding: var(--space-4); }
+  .header { padding: 0 var(--space-4); }
+}
+
+/* ── Utility ── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.ml-auto { margin-left: auto; }
+.mt-4 { margin-top: var(--space-4); }
+.mb-4 { margin-bottom: var(--space-4); }
+.text-sm { font-size: var(--text-sm); }
+.text-muted { color: var(--text-secondary); }
+.font-mono { font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div class="sidebar-brand">Canivete <span>Dev</span></div>
+    </div>
+
+    <div class="sidebar-search">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Buscar ferramenta..." id="sidebarSearchInput">
+      <span class="search-kbd">⌘K</span>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebarNav">
+      <div class="nav-group">
+        <div class="nav-group-label">Principal</div>
+        <a class="nav-item active" data-view="dashboard" onclick="switchView('dashboard', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+          Dashboard
+        </a>
+        <a class="nav-item" data-view="favorites" onclick="switchView('favorites', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+          Favoritos
+          <span class="nav-badge">5</span>
+        </a>
+        <a class="nav-item" data-view="history" onclick="switchView('history', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+          Histórico
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Codificação</div>
+        <a class="nav-item" data-view="base64" onclick="switchView('base64', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
+          Base64 ↔ Imagem
+        </a>
+        <a class="nav-item" data-view="textb64" onclick="switchView('textb64', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span>
+          Texto ↔ Base64
+        </a>
+        <a class="nav-item" data-view="url" onclick="switchView('url', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          URL Encode
+        </a>
+        <a class="nav-item" data-view="html" onclick="switchView('html', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+          HTML Entities
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Segurança</div>
+        <a class="nav-item" data-view="jwt" onclick="switchView('jwt', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+          JWT Decode
+        </a>
+        <a class="nav-item" data-view="hash" onclick="switchView('hash', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          Gerador de Hash
+        </a>
+        <a class="nav-item" data-view="certs" onclick="switchView('certs', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          Certificados SSL
+          <span class="nav-badge">★</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Dados</div>
+        <a class="nav-item" data-view="qr" onclick="switchView('qr', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></span>
+          QR Code
+        </a>
+        <a class="nav-item" data-view="json" onclick="switchView('json', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+          JSON Formatter
+        </a>
+        <a class="nav-item" data-view="csv" onclick="switchView('csv', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
+          CSV ↔ JSON
+        </a>
+        <a class="nav-item" data-view="regex" onclick="switchView('regex', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg></span>
+          RegEx Tester
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Utilitários</div>
+        <a class="nav-item" data-view="timestamp" onclick="switchView('timestamp', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+          Timestamp ↔ Data
+        </a>
+        <a class="nav-item" data-view="color" onclick="switchView('color', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></span>
+          Color Converter
+        </a>
+        <a class="nav-item" data-view="binary" onclick="switchView('binary', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/></svg></span>
+          Binary ↔ Text
+        </a>
+        <a class="nav-item" data-view="hex" onclick="switchView('hex', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span>
+          Hex ↔ Text
+        </a>
+        <a class="nav-item" data-view="sql" onclick="switchView('sql', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg></span>
+          SQL Formatter
+        </a>
+        <a class="nav-item" data-view="xml" onclick="switchView('xml', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+          XML/HTML Beautifier
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Outros</div>
+        <a class="nav-item" data-view="rss" onclick="switchView('rss', this)">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></span>
+          RSS Reader
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">CS</div>
+        <div class="user-info">
+          <div class="user-name">Canivete Dev</div>
+          <div class="user-role">v3.0 — 100% Local</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="header">
+    <div class="header-left">
+      <button class="header-btn" id="mobileMenuBtn" onclick="toggleMobileSidebar()" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="header-breadcrumb">
+        <span>Canivete Dev</span>
+        <span class="bc-sep">/</span>
+        <span class="bc-current" id="breadcrumbCurrent">Dashboard</span>
+      </div>
+      <div class="security-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        100% Local & Seguro
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" onclick="openCmdPalette()" title="Buscar (⌘K)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="header-btn" title="Notificações">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="badge-dot"></span>
+      </button>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="main-content" id="mainContent">
+
+    <!-- ── DASHBOARD VIEW ── -->
+    <div class="tool-view active" id="view-dashboard">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Suas ferramentas de desenvolvimento em um só lugar. 100% client-side, zero telemetria.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Ferramentas</span>
+            <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+          </div>
+          <div class="stat-value">19</div>
+          <span class="stat-change up">↑ 3 novas esta semana</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Conversões Hoje</span>
+            <div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+          </div>
+          <div class="stat-value">47</div>
+          <span class="stat-change up">↑ 12% vs ontem</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Certificados Analisados</span>
+            <div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          </div>
+          <div class="stat-value">12</div>
+          <span class="stat-change up">↑ 4 PFX extraídos</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">QR Codes Gerados</span>
+            <div class="stat-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/></svg></div>
+          </div>
+          <div class="stat-value">23</div>
+          <span class="stat-change down">↓ 5% vs ontem</span>
+        </div>
+      </div>
+
+      <div class="tools-section">
+        <div class="section-header">
+          <h2>Ferramentas Populares</h2>
+          <button class="section-action">Ver todas →</button>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card" onclick="switchView('certs', document.querySelector('[data-view=certs]'))">
+            <div class="tool-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            </div>
+            <h3>Certificados SSL</h3>
+            <p>Analise, converta e extraia certificados PFX, PEM, CER. Detecção inteligente de formato.</p>
+            <span class="tool-shortcut">⌘1</span>
+            <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="tool-card" onclick="switchView('qr', document.querySelector('[data-view=qr]'))">
+            <div class="tool-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+            </div>
+            <h3>QR Code</h3>
+            <p>Gere e leia QR Codes. Suporte a texto, URLs, chaves Pix e dados variados.</p>
+            <span class="tool-shortcut">⌘2</span>
+            <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="tool-card" onclick="switchView('json', document.querySelector('[data-view=json]'))">
+            <div class="tool-icon purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <h3>JSON Formatter</h3>
+            <p>Formate, valide e comprima JSON. Syntax highlighting e detecção de erros.</p>
+            <span class="tool-shortcut">⌘3</span>
+            <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="tool-card" onclick="switchView('jwt', document.querySelector('[data-view=jwt]'))">
+            <div class="tool-icon cyan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3>JWT Decode</h3>
+            <p>Decodifique tokens JWT em header, payload e signature. Validação de expiração.</p>
+            <span class="tool-shortcut">⌘4</span>
+            <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="tool-card" onclick="switchView('hash', document.querySelector('[data-view=hash]'))">
+            <div class="tool-icon orange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3>Gerador de Hash</h3>
+            <p>SHA-1, SHA-256, SHA-512. Geração instantânea com Web Crypto API.</p>
+            <span class="tool-shortcut">⌘5</span>
+            <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="tool-card" onclick="switchView('regex', document.querySelector('[data-view=regex]'))">
+            <div class="tool-icon pink">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+            </div>
+            <h3>RegEx Tester</h3>
+            <p>Teste expressões regulares em tempo real. Highlight de matches e grupos.</p>
+            <span class="tool-shortcut">⌘6</span>
+            <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CERTIFICADOS VIEW (exemplo de tool ativo) ── -->
+    <div class="tool-view" id="view-certs">
+      <div class="page-header">
+        <div class="flex items-center gap-3">
+          <h1>Certificados SSL</h1>
+          <div class="security-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            100% Client-Side
+          </div>
+        </div>
+        <p>Analise, converta e extraia certificados SSL. Nenhum dado sai do seu navegador.</p>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border-default);margin-bottom:var(--space-5);">
+        <button class="btn-ghost cert-subtab active" onclick="switchCertTab('info', this)" style="border-bottom:2px solid var(--accent);color:var(--accent-text);border-radius:0;padding:var(--space-3) var(--space-4);">Informações</button>
+        <button class="btn-ghost cert-subtab" onclick="switchCertTab('pair', this)" style="border-radius:0;padding:var(--space-3) var(--space-4);">Validar Par</button>
+        <button class="btn-ghost cert-subtab" onclick="switchCertTab('convert', this)" style="border-radius:0;padding:var(--space-3) var(--space-4);">Conversões</button>
+        <button class="btn-ghost cert-subtab" onclick="switchCertTab('pfx', this)" style="border-radius:0;padding:var(--space-3) var(--space-4);">Extrair PFX</button>
+      </div>
+
+      <!-- Conversões Tab (exemplo completo) -->
+      <div class="cert-subview" id="certtab-convert" style="display:block;">
+        <div class="tool-split">
+          <div class="tool-panel">
+            <div class="tool-panel-header">
+              <h3>Entrada</h3>
+              <div class="tool-panel-actions">
+                <button class="btn-icon" title="Upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+                <button class="btn-icon" title="Colar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                <button class="btn-icon" title="Limpar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+            </div>
+            <div class="tool-panel-body">
+              <div class="input-group mb-4">
+                <label>Tipo de Conversão</label>
+                <div class="search-select">
+                  <input type="text" placeholder="🔍 Digite para buscar (ex: pem, pfx, key...)" id="convSearch">
+                  <div class="dropdown" id="convDropdown">
+                    <div class="dropdown-group-label">⭐ Sugestões (PFX detectado)</div>
+                    <div class="dropdown-item suggested">📦➡️📄+🔑 PFX → PEM + Key</div>
+                    <div class="dropdown-item">📦➡️📄 PFX → Apenas PEM</div>
+                    <div class="dropdown-item">📦➡️🔑 PFX → Apenas Key</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-group-label">📦 PFX → CER</div>
+                    <div class="dropdown-item">📦➡️📄+🔑 PFX → CER + Key</div>
+                    <div class="dropdown-item">📦➡️📄 PFX → Apenas CER</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-group-label">📦 Empacotar</div>
+                    <div class="dropdown-item">📄+🔑➡️📦 Cert + Key → PFX</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-group-label">📜 Certificado</div>
+                    <div class="dropdown-item">📜➡️📄 PEM → DER</div>
+                    <div class="dropdown-item">📄➡️📜 DER → PEM</div>
+                    <div class="dropdown-item">📜➡️📝 Cert → Resumo legível</div>
+                    <div class="dropdown-item">📜➡️{} Cert → JSON</div>
+                  </div>
+                </div>
+              </div>
+              <textarea placeholder="Cole o certificado PEM, PFX (Base64), chave privada..."></textarea>
+            </div>
+          </div>
+
+          <div class="tool-actions">
+            <button class="btn btn-primary btn-convert">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              Executar
+            </button>
+          </div>
+
+          <div class="tool-panel">
+            <div class="tool-panel-header">
+              <h3>Saída</h3>
+              <div class="tool-panel-actions">
+                <button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                <button class="btn-icon" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+              </div>
+            </div>
+            <div class="tool-panel-body">
+              <div class="empty-state" style="flex:1;">
+                <div class="empty-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                </div>
+                <h3>Selecione uma conversão</h3>
+                <p>Cole o conteúdo na entrada, selecione o tipo de conversão e clique em Executar.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Tab -->
+      <div class="cert-subview" id="certtab-info" style="display:none;">
+        <div class="tool-panel" style="max-width:720px;">
+          <div class="tool-panel-header">
+            <h3>Cole o certificado ou PFX</h3>
+            <div class="tool-panel-actions">
+              <button class="btn btn-secondary" style="font-size:var(--text-xs);padding:4px 10px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload Inteligente
+              </button>
+            </div>
+          </div>
+          <div class="tool-panel-body">
+            <textarea placeholder="Cole o certificado PEM, PFX em Base64, ou arraste um arquivo .cer/.crt/.pem/.pfx/.key" style="min-height:120px;">-----BEGIN CERTIFICATE-----
+MIIFjTCCBHWgAwIBAgISAxjIbCkJl3QAAAAABJUaMA0GCSqGSIb3DQEBCwUA
+MDIxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MQswCQYD
+VQQDEwJSMzAeFw0yNjAxMDEwMDAwMDBaFw0yNjA0MDEyMzU5NTlaMBYxFDAS
+BgNVBAMMCyouZXhhbXBsZS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+-----END CERTIFICATE-----</textarea>
+            <div class="mt-4" style="display:flex;gap:var(--space-3);align-items:center;">
+              <button class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Extrair Informações
+              </button>
+              <button class="btn btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload
+              </button>
+            </div>
+            <div class="mt-4" style="background:var(--bg-base);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-4);font-family:var(--font-mono);font-size:var(--text-sm);color:var(--text-secondary);white-space:pre;line-height:1.7;">
+═══════════════════════════════════════════
+  INFORMAÇÕES DO CERTIFICADO
+═══════════════════════════════════════════
+
+Subject (CN): *.example.com
+Issuer (CN):  R3 (Let's Encrypt)
+Serial:       3C:4D:5E:6F:7A:8B:9C:0D:1E:2F
+
+Válido De:    01/01/2026 00:00:00 BRT
+Válido Até:   01/04/2026 23:59:59 BRT
+Status:       ✅ Válido (70 dias restantes)
+
+───────────────────────────────────────────
+SHA-256 Fingerprint:
+  a1:b2:c3:d4:e5:f6:a7:b8:c9:d0:e1:f2
+  a3:b4:c5:d6:e7:f8:a9:b0:c1:d2:e3:f4
+
+Public Key SHA-256 (SPKI):
+  f1:e2:d3:c4:b5:a6:f7:e8:d9:c0:b1:a2
+  f3:e4:d5:c6:b7:a8:f9:e0:d1:c2:b3:a4
+
+Modulus MD5:
+  1a:2b:3c:4d:5e:6f:7a:8b:9c:0d:1e:2f
+───────────────────────────────────────────
+Subject Alt Names (SAN):
+  1. DNS: *.example.com
+  2. DNS: example.com
+  3. IP:  93.184.216.34
+
+Extensions:
+  Basic Constraints: CA:FALSE
+  Key Usage: Digital Signature, Key Encipherment
+  Extended Key Usage: TLS Web Server Auth</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Validar Par Tab -->
+      <div class="cert-subview" id="certtab-pair" style="display:none;">
+        <div class="tool-split">
+          <div class="tool-panel">
+            <div class="tool-panel-header">
+              <h3>📜 Certificado (PEM)</h3>
+              <div class="tool-panel-actions">
+                <button class="btn-icon" title="Upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+                <button class="btn-icon" title="Limpar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+            </div>
+            <div class="tool-panel-body">
+              <textarea placeholder="Cole o certificado PEM aqui..." style="min-height:180px;">-----BEGIN CERTIFICATE-----
+MIIFjTCCBHWgAwIBAgISAxjI...
+-----END CERTIFICATE-----</textarea>
+            </div>
+          </div>
+
+          <div class="tool-actions">
+            <button class="btn btn-primary btn-convert">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/></svg>
+              Validar Par
+            </button>
+          </div>
+
+          <div class="tool-panel">
+            <div class="tool-panel-header">
+              <h3>🔑 Chave Privada (PEM)</h3>
+              <div class="tool-panel-actions">
+                <button class="btn-icon" title="Upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+                <button class="btn-icon" title="Limpar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+            </div>
+            <div class="tool-panel-body">
+              <textarea placeholder="Cole a chave privada PEM aqui..." style="min-height:180px;">-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQE...
+-----END PRIVATE KEY-----</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resultado da validação -->
+        <div class="mt-4" style="background:var(--bg-elevated);border:1px solid var(--success);border-radius:var(--radius-lg);padding:var(--space-5);">
+          <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
+            <div style="width:40px;height:40px;border-radius:var(--radius-md);background:var(--success-subtle);display:flex;align-items:center;justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:22px;height:22px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+              <div style="font-size:var(--text-lg);font-weight:700;color:var(--success);">✅ PAR VÁLIDO</div>
+              <div style="font-size:var(--text-sm);color:var(--text-secondary);">Certificado e chave privada são correspondentes</div>
+            </div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-tertiary);background:var(--bg-base);border-radius:var(--radius-md);padding:var(--space-3);white-space:pre;line-height:1.6;">
+Cert Public Key SHA-256: f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6...
+Key  Public Key SHA-256: f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6...
+
+Cert Modulus MD5: 1a:2b:3c:4d:5e:6f:7a:8b:9c:0d
+Key  Modulus MD5: 1a:2b:3c:4d:5e:6f:7a:8b:9c:0d</div>
+        </div>
+      </div>
+
+      <!-- Extrair PFX Tab -->
+      <div class="cert-subview" id="certtab-pfx" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);">
+          <!-- Input -->
+          <div class="tool-panel" style="min-height:auto;">
+            <div class="tool-panel-header">
+              <h3>📦 Arquivo PFX (Base64)</h3>
+              <div class="tool-panel-actions">
+                <button class="btn btn-secondary" style="font-size:var(--text-xs);padding:4px 10px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload .pfx
+                </button>
+              </div>
+            </div>
+            <div class="tool-panel-body">
+              <textarea placeholder="Cole o PFX em Base64 ou faça upload..." style="min-height:100px;">MIIKqQIBAzCCCm...truncated...YQIDCQAwggFd</textarea>
+              <div class="mt-4" style="display:flex;gap:var(--space-3);align-items:center;">
+                <div class="input-group" style="flex:1;">
+                  <label>Senha do PFX</label>
+                  <input type="password" class="input-field" placeholder="Digite a senha..." value="••••••••">
+                </div>
+                <div class="input-group" style="flex:1;">
+                  <label>Extrair</label>
+                  <select class="input-field" style="font-family:var(--font-sans);">
+                    <option>Cert + Key (ambos)</option>
+                    <option>Apenas Certificado</option>
+                    <option>Apenas Chave</option>
+                    <option>Cadeia completa</option>
+                    <option>Informações</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mt-4">
+                <button class="btn btn-primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                  Extrair
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Output -->
+          <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+            <div class="tool-panel" style="min-height:auto;flex:1;">
+              <div class="tool-panel-header">
+                <h3>📜 Certificado (.pem)</h3>
+                <div class="tool-panel-actions">
+                  <button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                  <button class="btn-icon" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+                </div>
+              </div>
+              <div class="tool-panel-body">
+                <textarea readonly style="min-height:80px;background:var(--bg-overlay);color:var(--success);font-size:var(--text-xs);">-----BEGIN CERTIFICATE-----
+MIIFjTCCBHWgAwIBAgISAxjI...
+-----END CERTIFICATE-----</textarea>
+              </div>
+            </div>
+            <div class="tool-panel" style="min-height:auto;flex:1;">
+              <div class="tool-panel-header">
+                <h3>🔑 Chave Privada (.key)</h3>
+                <div class="tool-panel-actions">
+                  <button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                  <button class="btn-icon" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+                </div>
+              </div>
+              <div class="tool-panel-body">
+                <textarea readonly style="min-height:80px;background:var(--bg-overlay);color:var(--warning);font-size:var(--text-xs);">-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0B...
+-----END PRIVATE KEY-----</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4" style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+          <button class="btn btn-secondary" style="font-size:var(--text-xs);padding:6px 12px;">📥 Download Cert (.pem)</button>
+          <button class="btn btn-secondary" style="font-size:var(--text-xs);padding:6px 12px;">📥 Download Key (.key)</button>
+          <button class="btn btn-secondary" style="font-size:var(--text-xs);padding:6px 12px;">📥 Download PFX (.pfx)</button>
+          <button class="btn btn-secondary" style="font-size:var(--text-xs);padding:6px 12px;">📋 Copiar tudo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── OTHER TOOL VIEWS (empty states) ── -->
+    <div class="tool-view" id="view-favorites">
+      <div class="page-header"><h1>Favoritos</h1><p>Suas ferramentas mais usadas, acesso rápido.</p></div>
+      <div class="tools-grid">
+        <div class="tool-card" onclick="switchView('certs', document.querySelector('[data-view=certs]'))"><div class="tool-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Certificados SSL</h3><p>Último uso: há 2 horas</p></div>
+        <div class="tool-card" onclick="switchView('qr', document.querySelector('[data-view=qr]'))"><div class="tool-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/></svg></div><h3>QR Code</h3><p>Último uso: há 5 horas</p></div>
+        <div class="tool-card" onclick="switchView('json', document.querySelector('[data-view=json]'))"><div class="tool-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div><h3>JSON Formatter</h3><p>Último uso: ontem</p></div>
+        <div class="tool-card" onclick="switchView('jwt', document.querySelector('[data-view=jwt]'))"><div class="tool-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>JWT Decode</h3><p>Último uso: ontem</p></div>
+        <div class="tool-card" onclick="switchView('hash', document.querySelector('[data-view=hash]'))"><div class="tool-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>Hash Generator</h3><p>Último uso: 2 dias</p></div>
+      </div>
+    </div>
+
+    <div class="tool-view" id="view-history">
+      <div class="page-header"><h1>Histórico</h1><p>Suas últimas ações realizadas.</p></div>
+      <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+        <div style="background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;align-items:center;gap:var(--space-4);">
+          <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--accent-subtle);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="2" style="width:18px;height:18px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div style="flex:1;"><div style="font-size:var(--text-sm);font-weight:550;">PFX → PEM + Key</div><div style="font-size:var(--text-xs);color:var(--text-tertiary);">certificado.pfx • 2.3 KB</div></div>
+          <span style="font-size:var(--text-xs);color:var(--text-tertiary);">há 15 min</span>
+          <span style="font-size:var(--text-xs);background:var(--success-subtle);color:var(--success);padding:2px 8px;border-radius:var(--radius-full);">Sucesso</span>
+        </div>
+        <div style="background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;align-items:center;gap:var(--space-4);">
+          <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--success-subtle);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:18px;height:18px;"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/></svg></div>
+          <div style="flex:1;"><div style="font-size:var(--text-sm);font-weight:550;">QR Code gerado</div><div style="font-size:var(--text-xs);color:var(--text-tertiary);">https://example.com/api/v2</div></div>
+          <span style="font-size:var(--text-xs);color:var(--text-tertiary);">há 1 hora</span>
+          <span style="font-size:var(--text-xs);background:var(--success-subtle);color:var(--success);padding:2px 8px;border-radius:var(--radius-full);">Sucesso</span>
+        </div>
+        <div style="background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;align-items:center;gap:var(--space-4);">
+          <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--warning-subtle);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" style="width:18px;height:18px;"><polyline points="16 18 22 12 16 6"/></svg></div>
+          <div style="flex:1;"><div style="font-size:var(--text-sm);font-weight:550;">JSON Formatado</div><div style="font-size:var(--text-xs);color:var(--text-tertiary);">response.json • 15.7 KB</div></div>
+          <span style="font-size:var(--text-xs);color:var(--text-tertiary);">há 3 horas</span>
+          <span style="font-size:var(--text-xs);background:var(--success-subtle);color:var(--success);padding:2px 8px;border-radius:var(--radius-full);">Sucesso</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-view" id="view-base64"><div class="page-header"><h1>Base64 ↔ Imagem</h1><p>Converta imagens para Base64 e vice-versa.</p></div><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><h3>Ferramenta pronta</h3><p>Arraste uma imagem ou cole um texto Base64 para converter.</p></div></div>
+    <div class="tool-view" id="view-textb64"><div class="page-header"><h1>Texto ↔ Base64</h1><p>Codifique e decodifique texto em Base64.</p></div><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div><h3>Ferramenta pronta</h3><p>Cole o texto ou Base64 para converter.</p></div></div>
+    <div class="tool-view" id="view-url"><div class="page-header"><h1>URL Encode/Decode</h1><p>Codifique e decodifique URLs.</p></div><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg></div><h3>Ferramenta pronta</h3><p>Cole a URL para codificar ou decodificar.</p></div></div>
+    <div class="tool-view" id="view-html"><div class="page-header"><h1>HTML Entities</h1><p>Codifique e decodifique entidades HTML.</p></div><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div><h3>Ferramenta pronta</h3><p>Cole o HTML para codificar ou decodificar.</p></div></div>
+    <!-- ── JWT VIEW ── -->
+    <div class="tool-view" id="view-jwt">
+      <div class="page-header"><h1>JWT Decode</h1><p>Decodifique tokens JWT em header, payload e signature.</p></div>
+      <div class="tool-panel" style="max-width:720px;margin-bottom:var(--space-4);">
+        <div class="tool-panel-header"><h3>Cole o token JWT</h3>
+          <div class="tool-panel-actions"><button class="btn-icon" title="Limpar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+        </div>
+        <div class="tool-panel-body">
+          <textarea style="min-height:80px;font-size:var(--text-xs);">eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkNhbnZldGUgRGV2IiwiaWF0IjoxNzA0MDY3MjAwLCJleHAiOjE3MzU2ODk2MDAsInJvbGUiOiJhZG1pbiIsInBlcm1pc3Npb25zIjpbInJlYWQiLCJ3cml0ZSIsImRlbGV0ZSJdfQ.SIGNATURE_HERE</textarea>
+          <div class="mt-4"><button class="btn btn-primary">Decodificar JWT</button></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-4);">
+        <div class="tool-panel" style="min-height:auto;">
+          <div class="tool-panel-header"><h3 style="color:#ef4444;">Header</h3><div class="tool-panel-actions"><button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></div>
+          <div class="tool-panel-body"><textarea readonly style="min-height:100px;background:var(--bg-overlay);color:#fca5a5;font-size:var(--text-xs);">{
+  "alg": "RS256",
+  "typ": "JWT"
+}</textarea></div>
+        </div>
+        <div class="tool-panel" style="min-height:auto;">
+          <div class="tool-panel-header"><h3 style="color:#a855f7;">Payload</h3><div class="tool-panel-actions"><button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></div>
+          <div class="tool-panel-body"><textarea readonly style="min-height:100px;background:var(--bg-overlay);color:#d8b4fe;font-size:var(--text-xs);">{
+  "sub": "1234567890",
+  "name": "Canivete Dev",
+  "iat": 1704067200,
+  "exp": 1735689600,
+  "role": "admin",
+  "permissions": ["read","write","delete"]
+}</textarea></div>
+        </div>
+        <div class="tool-panel" style="min-height:auto;">
+          <div class="tool-panel-header"><h3 style="color:#3b82f6;">Signature</h3><div class="tool-panel-actions"><button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></div>
+          <div class="tool-panel-body"><textarea readonly style="min-height:100px;background:var(--bg-overlay);color:#93c5fd;font-size:var(--text-xs);">SIGNATURE_HERE</textarea></div>
+        </div>
+      </div>
+      <div class="mt-4" style="display:flex;gap:var(--space-3);align-items:center;">
+        <span style="font-size:var(--text-xs);background:var(--success-subtle);color:var(--success);padding:4px 12px;border-radius:var(--radius-full);font-weight:600;">✅ Token válido</span>
+        <span style="font-size:var(--text-xs);color:var(--text-tertiary);">Expira em: 01/01/2025 00:00:00 (válido por 365 dias)</span>
+      </div>
+    </div>
+
+    <!-- ── HASH VIEW ── -->
+    <div class="tool-view" id="view-hash">
+      <div class="page-header"><h1>Gerador de Hash</h1><p>Gere hashes SHA-1, SHA-256 e SHA-512 instantaneamente.</p></div>
+      <div class="tool-panel" style="max-width:720px;">
+        <div class="tool-panel-header"><h3>Texto de entrada</h3>
+          <div class="tool-panel-actions"><button class="btn-icon" title="Limpar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+        </div>
+        <div class="tool-panel-body">
+          <textarea style="min-height:60px;" placeholder="Digite o texto para gerar os hashes...">Canivete Suíço Dev - 100% Local</textarea>
+          <div class="mt-4" style="display:flex;flex-direction:column;gap:var(--space-3);">
+            <div class="input-group"><label>SHA-1</label><div style="display:flex;gap:var(--space-2);"><input class="input-field" readonly style="flex:1;font-family:var(--font-mono);font-size:var(--text-xs);" value="a3f2b8c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9"><button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></div>
+            <div class="input-group"><label>SHA-256</label><div style="display:flex;gap:var(--space-2);"><input class="input-field" readonly style="flex:1;font-family:var(--font-mono);font-size:var(--text-xs);" value="b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5"><button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></div>
+            <div class="input-group"><label>SHA-512</label><div style="display:flex;gap:var(--space-2);"><input class="input-field" readonly style="flex:1;font-family:var(--font-mono);font-size:var(--text-xs);" value="c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"><button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── QR CODE VIEW ── -->
+    <div class="tool-view" id="view-qr">
+      <div class="page-header"><h1>QR Code</h1><p>Gere e leia QR Codes. 100% client-side.</p></div>
+      <div class="tool-split">
+        <div class="tool-panel">
+          <div class="tool-panel-header"><h3>Texto / URL</h3>
+            <div class="tool-panel-actions"><button class="btn-icon" title="Limpar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+          </div>
+          <div class="tool-panel-body">
+            <textarea style="min-height:120px;" placeholder="Digite o texto ou URL...">https://github.com/canivete-dev</textarea>
+            <div class="mt-4"><button class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/></svg>
+              Gerar QR Code
+            </button></div>
+          </div>
+        </div>
+        <div class="tool-actions">
+          <button class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Ler QR Code
+          </button>
+        </div>
+        <div class="tool-panel">
+          <div class="tool-panel-header"><h3>Resultado</h3>
+            <div class="tool-panel-actions"><button class="btn-icon" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>
+          </div>
+          <div class="tool-panel-body" style="align-items:center;justify-content:center;background:white;border-radius:0 0 var(--radius-lg) var(--radius-lg);">
+            <div style="width:200px;height:200px;background:#fff;border:1px solid #ddd;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;position:relative;">
+              <svg viewBox="0 0 200 200" style="width:180px;height:180px;">
+                <rect x="10" y="10" width="50" height="50" fill="#000" rx="4"/><rect x="15" y="15" width="40" height="40" fill="#fff" rx="2"/><rect x="20" y="20" width="30" height="30" fill="#000" rx="2"/>
+                <rect x="140" y="10" width="50" height="50" fill="#000" rx="4"/><rect x="145" y="15" width="40" height="40" fill="#fff" rx="2"/><rect x="150" y="20" width="30" height="30" fill="#000" rx="2"/>
+                <rect x="10" y="140" width="50" height="50" fill="#000" rx="4"/><rect x="15" y="145" width="40" height="40" fill="#fff" rx="2"/><rect x="20" y="150" width="30" height="30" fill="#000" rx="2"/>
+                <rect x="70" y="10" width="10" height="10" fill="#000"/><rect x="70" y="30" width="10" height="10" fill="#000"/><rect x="90" y="10" width="10" height="10" fill="#000"/>
+                <rect x="70" y="70" width="10" height="10" fill="#000"/><rect x="90" y="70" width="10" height="10" fill="#000"/><rect x="110" y="70" width="10" height="10" fill="#000"/>
+                <rect x="70" y="90" width="10" height="10" fill="#000"/><rect x="110" y="90" width="10" height="10" fill="#000"/>
+                <rect x="70" y="110" width="10" height="10" fill="#000"/><rect x="90" y="110" width="10" height="10" fill="#000"/><rect x="110" y="110" width="10" height="10" fill="#000"/>
+                <rect x="130" y="110" width="10" height="10" fill="#000"/><rect x="150" y="110" width="10" height="10" fill="#000"/>
+                <rect x="130" y="130" width="10" height="10" fill="#000"/><rect x="150" y="150" width="10" height="10" fill="#000"/>
+                <rect x="170" y="130" width="10" height="10" fill="#000"/><rect x="170" y="170" width="10" height="10" fill="#000"/>
+              </svg>
+            </div>
+            <div class="mt-4" style="display:flex;gap:var(--space-2);"><button class="btn btn-secondary" style="font-size:var(--text-xs);padding:6px 12px;">📥 Download PNG</button><button class="btn btn-secondary" style="font-size:var(--text-xs);padding:6px 12px;">📋 Copiar</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── JSON FORMATTER VIEW ── -->
+    <div class="tool-view" id="view-json">
+      <div class="page-header"><h1>JSON Formatter</h1><p>Formate, valide e comprima JSON.</p></div>
+      <div class="tool-split">
+        <div class="tool-panel">
+          <div class="tool-panel-header"><h3>JSON de entrada</h3>
+            <div class="tool-panel-actions"><button class="btn-icon" title="Limpar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+          </div>
+          <div class="tool-panel-body"><textarea style="font-size:var(--text-xs);">{"name":"Canivete Dev","version":"3.0","tools":["base64","qr","json","jwt","hash","regex","certs"],"config":{"theme":"dark","lang":"pt-BR","features":{"darkMode":true,"cmdPalette":true,"favorites":true}}}</textarea></div>
+        </div>
+        <div class="tool-actions">
+          <button class="btn btn-primary btn-convert">Formatar</button>
+          <button class="btn btn-secondary btn-convert">Minificar</button>
+          <button class="btn btn-secondary btn-convert">Validar</button>
+        </div>
+        <div class="tool-panel">
+          <div class="tool-panel-header"><h3>Resultado</h3>
+            <div class="tool-panel-actions"><button class="btn-icon" title="Copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+          </div>
+          <div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);font-size:var(--text-xs);color:var(--success);">{
+    "name": "Canivete Dev",
+    "version": "3.0",
+    "tools": [
+        "base64",
+        "qr",
+        "json",
+        "jwt",
+        "hash",
+        "regex",
+        "certs"
+    ],
+    "config": {
+        "theme": "dark",
+        "lang": "pt-BR",
+        "features": {
+            "darkMode": true,
+            "cmdPalette": true,
+            "favorites": true
+        }
+    }
+}</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REGEX VIEW ── -->
+    <div class="tool-view" id="view-regex">
+      <div class="page-header"><h1>RegEx Tester</h1><p>Teste expressões regulares em tempo real.</p></div>
+      <div class="tool-panel" style="max-width:720px;margin-bottom:var(--space-4);">
+        <div class="tool-panel-body">
+          <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-3);">
+            <div class="input-group" style="flex:3;"><label>Pattern</label><input class="input-field" style="font-family:var(--font-mono);" value="(\d{3})[\.-]?(\d{3})[\.-]?(\d{3})[\.-]?(\d{2})"></div>
+            <div class="input-group" style="flex:1;"><label>Flags</label><input class="input-field" style="font-family:var(--font-mono);" value="gm"></div>
+          </div>
+          <div class="input-group"><label>Texto de teste</label><textarea style="min-height:80px;">CPF: 123.456.789-00
+CPF: 98765432100
+CPF inválido: 12345
+Outro: 111.222.333-44</textarea></div>
+          <div class="mt-4"><button class="btn btn-primary">Testar RegEx</button></div>
+        </div>
+      </div>
+      <div class="tool-panel" style="max-width:720px;">
+        <div class="tool-panel-header"><h3>Matches encontrados</h3><span style="font-size:var(--text-xs);background:var(--success-subtle);color:var(--success);padding:2px 8px;border-radius:var(--radius-full);">3 matches</span></div>
+        <div class="tool-panel-body">
+          <div style="font-family:var(--font-mono);font-size:var(--text-sm);line-height:2;">
+            <div style="background:var(--success-subtle);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);margin-bottom:var(--space-2);">
+              <span style="color:var(--text-tertiary);">Match 1 (index 5):</span> <span style="color:var(--success);font-weight:600;">123.456.789-00</span>
+              <div style="font-size:var(--text-xs);color:var(--text-tertiary);">Group 1: <span style="color:var(--accent-text);">123</span> | Group 2: <span style="color:var(--accent-text);">456</span> | Group 3: <span style="color:var(--accent-text);">789</span> | Group 4: <span style="color:var(--accent-text);">00</span></div>
+            </div>
+            <div style="background:var(--success-subtle);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);margin-bottom:var(--space-2);">
+              <span style="color:var(--text-tertiary);">Match 2 (index 22):</span> <span style="color:var(--success);font-weight:600;">98765432100</span>
+              <div style="font-size:var(--text-xs);color:var(--text-tertiary);">Group 1: <span style="color:var(--accent-text);">987</span> | Group 2: <span style="color:var(--accent-text);">654</span> | Group 3: <span style="color:var(--accent-text);">321</span> | Group 4: <span style="color:var(--accent-text);">00</span></div>
+            </div>
+            <div style="background:var(--success-subtle);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);">
+              <span style="color:var(--text-tertiary);">Match 3 (index 55):</span> <span style="color:var(--success);font-weight:600;">111.222.333-44</span>
+              <div style="font-size:var(--text-xs);color:var(--text-tertiary);">Group 1: <span style="color:var(--accent-text);">111</span> | Group 2: <span style="color:var(--accent-text);">222</span> | Group 3: <span style="color:var(--accent-text);">333</span> | Group 4: <span style="color:var(--accent-text);">44</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CSV VIEW ── -->
+    <div class="tool-view" id="view-csv">
+      <div class="page-header"><h1>CSV ↔ JSON</h1><p>Converta entre CSV e JSON.</p></div>
+      <div class="tool-split">
+        <div class="tool-panel">
+          <div class="tool-panel-header"><h3>CSV</h3></div>
+          <div class="tool-panel-body"><textarea style="font-size:var(--text-xs);">nome,email,idade,ativo
+João Silva,joao@example.com,28,true
+Maria Santos,maria@example.com,34,true
+Pedro Lima,pedro@example.com,22,false</textarea></div>
+        </div>
+        <div class="tool-actions">
+          <button class="btn btn-primary btn-convert">CSV → JSON</button>
+          <button class="btn btn-secondary btn-convert">JSON → CSV</button>
+        </div>
+        <div class="tool-panel">
+          <div class="tool-panel-header"><h3>JSON</h3></div>
+          <div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);font-size:var(--text-xs);color:var(--success);">[
+  {
+    "nome": "João Silva",
+    "email": "joao@example.com",
+    "idade": "28",
+    "ativo": "true"
+  },
+  {
+    "nome": "Maria Santos",
+    "email": "maria@example.com",
+    "idade": "34",
+    "ativo": "true"
+  },
+  {
+    "nome": "Pedro Lima",
+    "email": "pedro@example.com",
+    "idade": "22",
+    "ativo": "false"
+  }
+]</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REMAINING TOOLS (compact with examples) ── -->
+    <div class="tool-view" id="view-base64">
+      <div class="page-header"><h1>Base64 ↔ Imagem</h1><p>Converta imagens para Base64 e vice-versa.</p></div>
+      <div class="tool-split">
+        <div class="tool-panel"><div class="tool-panel-header"><h3>Base64</h3></div><div class="tool-panel-body"><textarea style="font-size:var(--text-xs);" placeholder="Cole o Base64 aqui...">data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==</textarea></div></div>
+        <div class="tool-actions"><button class="btn btn-primary btn-convert">→ Imagem</button><button class="btn btn-secondary btn-convert">← Base64</button></div>
+        <div class="tool-panel"><div class="tool-panel-header"><h3>Imagem</h3></div><div class="tool-panel-body" style="align-items:center;justify-content:center;"><div style="width:200px;height:200px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:white;font-size:var(--text-lg);font-weight:700;">Preview</div></div></div>
+      </div>
+    </div>
+    <div class="tool-view" id="view-textb64">
+      <div class="page-header"><h1>Texto ↔ Base64</h1><p>Codifique e decodifique texto em Base64.</p></div>
+      <div class="tool-split">
+        <div class="tool-panel"><div class="tool-panel-header"><h3>Texto</h3></div><div class="tool-panel-body"><textarea>Canivete Suíço Dev - 100% Local & Seguro 🔒</textarea></div></div>
+        <div class="tool-actions"><button class="btn btn-primary btn-convert">Encode →</button><button class="btn btn-secondary btn-convert">← Decode</button></div>
+        <div class="tool-panel"><div class="tool-panel-header"><h3>Base64</h3></div><div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);color:var(--success);">Q2FuaXZldGUgU3XDrW8gRGV2IC0gMTAwMCBMb2NhbCAmIFNlZ3VybyDwn5iE</textarea></div></div>
+      </div>
+    </div>
+    <div class="tool-view" id="view-url">
+      <div class="page-header"><h1>URL Encode/Decode</h1><p>Codifique e decodifique URLs.</p></div>
+      <div class="tool-split">
+        <div class="tool-panel"><div class="tool-panel-header"><h3>URL Original</h3></div><div class="tool-panel-body"><textarea>https://example.com/search?q=canivete dev&lang=pt-BR&page=1</textarea></div></div>
+        <div class="tool-actions"><button class="btn btn-primary btn-convert">Encode →</button><button class="btn btn-secondary btn-convert">← Decode</button></div>
+        <div class="tool-panel"><div class="tool-panel-header"><h3>URL Codificada</h3></div><div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);color:var(--success);">https%3A%2F%2Fexample.com%2Fsearch%3Fq%3Dcanivete%20dev%26lang%3Dpt-BR%26page%3D1</textarea></div></div>
+      </div>
+    </div>
+    <div class="tool-view" id="view-html">
+      <div class="page-header"><h1>HTML Entities</h1><p>Codifique e decodifique entidades HTML.</p></div>
+      <div class="tool-split">
+        <div class="tool-panel"><div class="tool-panel-header"><h3>HTML Original</h3></div><div class="tool-panel-body"><textarea><div class="container">
+  <h1>Olá & Bem-vindo!</h1>
+  <p>Preço: R$ 10,00</p>
+</div></textarea></div></div>
+        <div class="tool-actions"><button class="btn btn-primary btn-convert">Encode →</button><button class="btn btn-secondary btn-convert">← Decode</button></div>
+        <div class="tool-panel"><div class="tool-panel-header"><h3>Entities</h3></div><div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);color:var(--success);">&lt;div class=&quot;container&quot;&gt;
+  &lt;h1&gt;Olá &amp; Bem-vindo!&lt;/h1&gt;
+  &lt;p&gt;Preço: R$ 10,00&lt;/p&gt;
+&lt;/div&gt;</textarea></div></div>
+      </div>
+    </div>
+
+    <!-- ── TIMESTAMP VIEW ── -->
+    <div class="tool-view" id="view-timestamp"><div class="page-header"><h1>Timestamp ↔ Data</h1><p>Converta timestamps Unix para datas legíveis e vice-versa.</p></div><div class="tool-split"><div class="tool-panel" style="min-height:auto;"><div class="tool-panel-header"><h3>Timestamp Unix</h3></div><div class="tool-panel-body"><div class="input-group"><label>Timestamp</label><input class="input-field font-mono" value="1704067200"></div><div class="mt-4"><button class="btn btn-primary btn-convert">→ Data</button></div><div class="mt-4" style="background:var(--bg-base);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-3);font-family:var(--font-mono);font-size:var(--text-sm);color:var(--success);">01/01/2024 00:00:00 BRT</div></div></div><div class="tool-actions"><button class="btn btn-secondary">⇄</button></div><div class="tool-panel" style="min-height:auto;"><div class="tool-panel-header"><h3>Data</h3></div><div class="tool-panel-body"><div class="input-group"><label>Data e Hora</label><input class="input-field font-mono" type="datetime-local" value="2024-01-01T03:00"></div><div class="mt-4"><button class="btn btn-primary btn-convert">→ Timestamp</button></div><div class="mt-4" style="background:var(--bg-base);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-3);font-family:var(--font-mono);font-size:var(--text-sm);color:var(--success);">1704078000</div></div></div></div></div>
+
+    <!-- ── COLOR VIEW ── -->
+    <div class="tool-view" id="view-color"><div class="page-header"><h1>Color Converter</h1><p>Converta cores entre HEX, RGB, HSL, HSV e CMYK.</p></div><div class="tool-panel" style="max-width:720px;"><div class="tool-panel-body"><div style="display:flex;gap:var(--space-4);align-items:center;margin-bottom:var(--space-4);"><div style="width:120px;height:120px;border-radius:var(--radius-lg);background:#3b82f6;border:1px solid var(--border-default);"></div><div style="flex:1;display:flex;flex-direction:column;gap:var(--space-3);"><div class="input-group"><label>Color Picker</label><input type="color" class="input-field" style="height:40px;padding:4px;cursor:pointer;" value="#3b82f6"></div><div class="input-group"><label>HEX</label><input class="input-field font-mono" value="#3b82f6"></div><div class="input-group"><label>RGB</label><input class="input-field font-mono" value="59, 130, 246"></div><div class="input-group"><label>HSL</label><input class="input-field font-mono" value="217°, 91%, 60%"></div><div class="input-group"><label>HSV</label><input class="input-field font-mono" value="217°, 76%, 96%"></div><div class="input-group"><label>CMYK</label><input class="input-field font-mono" value="76%, 47%, 0%, 4%"></div></div></div></div></div></div>
+
+    <!-- ── BINARY VIEW ── -->
+    <div class="tool-view" id="view-binary"><div class="page-header"><h1>Binary ↔ Text</h1><p>Converta entre código binário e texto legível.</p></div><div class="tool-split"><div class="tool-panel"><div class="tool-panel-header"><h3>Texto</h3></div><div class="tool-panel-body"><textarea>Canivete Dev</textarea></div></div><div class="tool-actions"><button class="btn btn-primary btn-convert">→ Binary</button><button class="btn btn-secondary btn-convert">← Text</button></div><div class="tool-panel"><div class="tool-panel-header"><h3>Binário</h3></div><div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);color:var(--success);font-size:var(--text-xs);">01000011 01100001 01101110 01101001
+01110110 01100101 01110100 01100101
+00100000 01000100 01100101 01110110</textarea></div></div></div></div>
+
+    <!-- ── HEX VIEW ── -->
+    <div class="tool-view" id="view-hex"><div class="page-header"><h1>Hex ↔ Text</h1><p>Converta entre hexadecimal e texto legível.</p></div><div class="tool-split"><div class="tool-panel"><div class="tool-panel-header"><h3>Texto</h3></div><div class="tool-panel-body"><textarea>Canivete Dev</textarea></div></div><div class="tool-actions"><button class="btn btn-primary btn-convert">→ Hex</button><button class="btn btn-secondary btn-convert">← Text</button></div><div class="tool-panel"><div class="tool-panel-header"><h3>Hexadecimal</h3></div><div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);color:var(--success);font-size:var(--text-xs);">43 61 6E 69 76 65 74 65 20 44 65 76</textarea></div></div></div></div>
+
+    <!-- ── SQL VIEW ── -->
+    <div class="tool-view" id="view-sql"><div class="page-header"><h1>SQL Formatter</h1><p>Formate e indent consultas SQL.</p></div><div class="tool-split"><div class="tool-panel"><div class="tool-panel-header"><h3>SQL de entrada</h3></div><div class="tool-panel-body"><textarea style="font-size:var(--text-xs);">SELECT u.id, u.name, u.email, o.total FROM users u INNER JOIN orders o ON u.id = o.user_id WHERE u.active = 1 AND o.created_at > '2024-01-01' ORDER BY o.total DESC LIMIT 10</textarea></div></div><div class="tool-actions"><button class="btn btn-primary btn-convert">Formatar</button></div><div class="tool-panel"><div class="tool-panel-header"><h3>SQL Formatado</h3></div><div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);font-size:var(--text-xs);color:var(--success);">SELECT
+    u.id, u.name, u.email, o.total
+FROM users u
+INNER JOIN orders o ON u.id = o.user_id
+WHERE u.active = 1
+    AND o.created_at > '2024-01-01'
+ORDER BY o.total DESC
+LIMIT 10</textarea></div></div></div></div>
+
+    <!-- ── XML VIEW ── -->
+    <div class="tool-view" id="view-xml"><div class="page-header"><h1>XML/HTML Beautifier</h1><p>Formate e minifique XML e HTML.</p></div><div class="tool-split"><div class="tool-panel"><div class="tool-panel-header"><h3>XML de entrada</h3></div><div class="tool-panel-body"><textarea style="font-size:var(--text-xs);"><root><user id="1"><name>João</name><email>joao@example.com</email></user></root></textarea></div></div><div class="tool-actions"><button class="btn btn-primary btn-convert">Formatar</button><button class="btn btn-secondary btn-convert">Minificar</button></div><div class="tool-panel"><div class="tool-panel-header"><h3>Resultado</h3></div><div class="tool-panel-body"><textarea readonly style="background:var(--bg-overlay);font-size:var(--text-xs);color:var(--success);"><root>
+  <user id="1">
+    <name>João</name>
+    <email>joao@example.com</email>
+  </user>
+</root></textarea></div></div></div></div>
+
+    <!-- ── RSS VIEW ── -->
+    <div class="tool-view" id="view-rss"><div class="page-header"><h1>RSS Reader</h1><p>Leia feeds RSS/Atom de qualquer site.</p></div><div class="tool-panel" style="max-width:720px;"><div class="tool-panel-header"><h3>Feed URL</h3></div><div class="tool-panel-body"><div class="input-group"><label>URL do Feed</label><input class="input-field" value="https://github.com/canivete-dev.atom"></div><div class="mt-4"><button class="btn btn-primary">Carregar</button></div><div class="mt-4" style="display:flex;flex-direction:column;gap:var(--space-3);"><div style="background:var(--bg-base);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-3);"><div style="font-size:var(--text-sm);font-weight:600;">feat: smart conversion detection</div><div style="font-size:var(--text-xs);color:var(--text-tertiary);">22/01/2026 • canivete-dev</div></div><div style="background:var(--bg-base);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-3);"><div style="font-size:var(--text-sm);font-weight:600;">fix: web-adapter CORS</div><div style="font-size:var(--text-xs);color:var(--text-tertiary);">21/01/2026 • canivete-dev</div></div></div></div></div></div>
+
+  </main>
+</div>
+
+<!-- ═══ COMMAND PALETTE ═══ -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+  <div class="cmd-palette">
+    <input class="cmd-input" type="text" placeholder="Buscar ferramenta, conversão, ação..." id="cmdInput" autocomplete="off">
+    <div class="cmd-results" id="cmdResults">
+      <div class="cmd-item highlighted" onclick="switchView('certs', document.querySelector('[data-view=certs]'));closeCmdPalette();">
+        <div class="cmd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <span class="cmd-label">Certificados SSL</span>
+        <span class="cmd-hint">⌘1</span>
+      </div>
+      <div class="cmd-item" onclick="switchView('qr', document.querySelector('[data-view=qr]'));closeCmdPalette();">
+        <div class="cmd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/></svg></div>
+        <span class="cmd-label">QR Code</span>
+        <span class="cmd-hint">⌘2</span>
+      </div>
+      <div class="cmd-item" onclick="switchView('json', document.querySelector('[data-view=json]'));closeCmdPalette();">
+        <div class="cmd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/></svg></div>
+        <span class="cmd-label">JSON Formatter</span>
+        <span class="cmd-hint">⌘3</span>
+      </div>
+      <div class="cmd-item" onclick="switchView('jwt', document.querySelector('[data-view=jwt]'));closeCmdPalette();">
+        <div class="cmd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <span class="cmd-label">JWT Decode</span>
+        <span class="cmd-hint">⌘4</span>
+      </div>
+      <div class="cmd-item" onclick="switchView('hash', document.querySelector('[data-view=hash]'));closeCmdPalette();">
+        <div class="cmd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/></svg></div>
+        <span class="cmd-label">Gerador de Hash</span>
+        <span class="cmd-hint">⌘5</span>
+      </div>
+      <div class="cmd-item" onclick="switchView('regex', document.querySelector('[data-view=regex]'));closeCmdPalette();">
+        <div class="cmd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg></div>
+        <span class="cmd-label">RegEx Tester</span>
+        <span class="cmd-hint">⌘6</span>
+      </div>
+    </div>
+    <div class="cmd-footer">
+      <span><kbd>↑↓</kbd> navegar</span>
+      <span><kbd>↵</kbd> abrir</span>
+      <span><kbd>esc</kbd> fechar</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST CONTAINER ═══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+// ── View Switching ──
+function switchView(viewId, navEl) {
+  document.querySelectorAll('.tool-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const view = document.getElementById('view-' + viewId);
+  if (view) view.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  const names = {dashboard:'Dashboard',favorites:'Favoritos',history:'Histórico',base64:'Base64 ↔ Imagem',textb64:'Texto ↔ Base64',url:'URL Encode',html:'HTML Entities',jwt:'JWT Decode',hash:'Gerador de Hash',certs:'Certificados SSL',qr:'QR Code',json:'JSON Formatter',csv:'CSV ↔ JSON',regex:'RegEx Tester',timestamp:'Timestamp ↔ Data',color:'Color Converter',binary:'Binary ↔ Text',hex:'Hex ↔ Text',sql:'SQL Formatter',xml:'XML/HTML Beautifier',rss:'RSS Reader'};
+  document.getElementById('breadcrumbCurrent').textContent = names[viewId] || viewId;
+}
+
+// ── Cert Sub-tabs ──
+function switchCertTab(tab, btn) {
+  document.querySelectorAll('.cert-subview').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.cert-subtab').forEach(b => { b.style.borderBottom = '2px solid transparent'; b.style.color = ''; });
+  const el = document.getElementById('certtab-' + tab);
+  if (el) el.style.display = 'block';
+  btn.style.borderBottom = '2px solid var(--accent)';
+  btn.style.color = 'var(--accent-text)';
+}
+
+// ── Theme Toggle ──
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('themeIcon').innerHTML = next === 'dark'
+    ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+    : '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  showToast(next === 'dark' ? '🌙 Dark Mode ativado' : '☀️ Light Mode ativado', 'success');
+}
+
+// ── Command Palette ──
+function openCmdPalette() {
+  document.getElementById('cmdPalette').classList.add('open');
+  setTimeout(() => document.getElementById('cmdInput').focus(), 50);
+}
+function closeCmdPalette() {
+  document.getElementById('cmdPalette').classList.remove('open');
+  document.getElementById('cmdInput').value = '';
+}
+
+// ── Toast ──
+function showToast(msg, type) {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || 'success');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(12px)'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+
+// ── Searchable Dropdown ──
+const convSearch = document.getElementById('convSearch');
+const convDropdown = document.getElementById('convDropdown');
+if (convSearch) {
+  convSearch.addEventListener('focus', () => convDropdown.classList.add('open'));
+  convSearch.addEventListener('blur', () => setTimeout(() => convDropdown.classList.remove('open'), 200));
+  convSearch.addEventListener('input', () => {
+    const q = convSearch.value.toLowerCase();
+    convDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+      item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+    convDropdown.querySelectorAll('.dropdown-group-label, .dropdown-divider').forEach(el => {
+      el.style.display = q ? 'none' : '';
+    });
+    convDropdown.classList.add('open');
+  });
+  convDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+    item.addEventListener('click', () => {
+      convSearch.value = item.textContent.trim();
+      convDropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      convDropdown.classList.remove('open');
+    });
+  });
+}
+
+// ── Sidebar Search ──
+const sidebarSearch = document.getElementById('sidebarSearchInput');
+if (sidebarSearch) {
+  sidebarSearch.addEventListener('input', () => {
+    const q = sidebarSearch.value.toLowerCase();
+    document.querySelectorAll('.nav-item').forEach(item => {
+      const label = item.textContent.trim().toLowerCase();
+      item.style.display = label.includes(q) ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-group-label').forEach(label => {
+      const group = label.parentElement;
+      const hasVisible = Array.from(group.querySelectorAll('.nav-item')).some(i => i.style.display !== 'none');
+      label.style.display = hasVisible ? '' : 'none';
+    });
+  });
+}
+
+// ── Keyboard Shortcuts ──
+document.addEventListener('keydown', (e) => {
+  // ⌘K or Ctrl+K: Command palette
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    const palette = document.getElementById('cmdPalette');
+    if (palette.classList.contains('open')) closeCmdPalette();
+    else openCmdPalette();
+  }
+  // Escape: Close command palette
+  if (e.key === 'Escape') closeCmdPalette();
+  // Number shortcuts with Ctrl
+  if (e.ctrlKey && !e.metaKey) {
+    const shortcuts = {'1':'certs','2':'qr','3':'json','4':'jwt','5':'hash','6':'regex'};
+    if (shortcuts[e.key]) {
+      e.preventDefault();
+      switchView(shortcuts[e.key], document.querySelector('[data-view=' + shortcuts[e.key] + ']'));
+    }
+  }
+});
+
+// ── Command Palette Filter ──
+const cmdInput = document.getElementById('cmdInput');
+if (cmdInput) {
+  cmdInput.addEventListener('input', () => {
+    const q = cmdInput.value.toLowerCase();
+    document.querySelectorAll('#cmdResults .cmd-item').forEach(item => {
+      const label = item.querySelector('.cmd-label').textContent.toLowerCase();
+      item.style.display = label.includes(q) ? '' : 'none';
+    });
+  });
+}
+
+// ── Click outside to close overlays ──
+document.getElementById('cmdPalette').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('cmdPalette')) closeCmdPalette();
+});
+
+// ── Responsive mobile menu ──
+function toggleMobileSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+}
+function checkMobile() {
+  const btn = document.getElementById('mobileMenuBtn');
+  if (btn) btn.style.display = window.innerWidth <= 1024 ? 'flex' : 'none';
+}
+window.addEventListener('resize', checkMobile);
+checkMobile();
+
+// ── Initial Toast ──
+setTimeout(() => showToast('🚀 Canivete Suíço Dev v3.0 — Prototype carregado'), 500);
+</script>
+</body>
+</html>
