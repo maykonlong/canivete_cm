@@ -2839,33 +2839,66 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         gerarFakePF() {
             const nome=_pick(_NOMES),sob=_pick(_SOBR);
-            const data={
-                nome_completo:`${nome} ${sob}`,
-                cpf:_gerarCPFNum(),
-                rg:`${_pad(_rand(10000000,99999999),8)}-${_rand(0,9)}`,
-                data_nascimento:`${_pad(_rand(1,28),2)}/${_pad(_rand(1,12),2)}/${_rand(1960,2005)}`,
-                telefone:`(${_pad(_rand(11,99),2)}) 9${_pad(_rand(1000,9999),4)}-${_pad(_rand(1000,9999),4)}`,
-                email:`${nome.toLowerCase()}.${sob.toLowerCase()}${_rand(1,99)}@email.com`,
-                endereco:{logradouro:`${_pick(_LOG)} ${_pick(_RUA)}`,_num:_rand(1,9999),bairro:'Centro',cidade:_pick(_CID),uf:_pick(_UF),cep:`${_pad(_rand(10000,99999),5)}${_pad(_rand(0,999),3)}`},
-                banco:{ispb:_pad(_rand(0,99999999),8),agencia:_pad(_rand(1,9999),4),conta:_pad(_rand(1,9999999),7)}
-            };
+            const fields=[
+                {label:'Nome Completo',value:`${nome} ${sob}`},
+                {label:'CPF',value:_gerarCPFNum()},
+                {label:'RG',value:`${_pad(_rand(10000000,99999999),8)}-${_rand(0,9)}`},
+                {label:'Data de Nascimento',value:`${_pad(_rand(1,28),2)}/${_pad(_rand(1,12),2)}/${_rand(1960,2005)}`},
+                {label:'Telefone',value:`(${_pad(_rand(11,99),2)}) 9${_pad(_rand(1000,9999),4)}-${_pad(_rand(1000,9999),4)}`},
+                {label:'Email',value:`${nome.toLowerCase()}.${sob.toLowerCase()}${_rand(1,99)}@email.com`},
+                {label:'Endereço',value:`${_pick(_LOG)} ${_pick(_RUA)}, ${_rand(1,9999)} — ${_pick(_CID)}/${_pick(_UF)}`},
+                {label:'CEP',value:`${_pad(_rand(10000,99999),5)}-${_pad(_rand(0,999),3)}`},
+                {label:'Agência',value:_pad(_rand(1,9999),4)},
+                {label:'Conta',value:_pad(_rand(1,9999999),7)}
+            ];
             const el=document.getElementById('fake_out');
-            if(el) el.textContent=JSON.stringify(data,null,2);
+            if(!el)return;
+            el.innerHTML='';
+            el.style.whiteSpace='normal';
+            fields.forEach(f=>{
+                const row=document.createElement('div');
+                row.className='fake-row';
+                row.innerHTML=`<span class="fake-label">${f.label}</span><span class="fake-value">${f.value}</span>`;
+                const btn=document.createElement('button');
+                btn.className='btn-copy-item';
+                btn.title='Copiar';
+                btn.textContent='📋';
+                btn.onclick=()=>navigator.clipboard.writeText(f.value).then(()=>{btn.textContent='✅';setTimeout(()=>btn.textContent='📋',1200);}).catch(()=>{});
+                row.appendChild(btn);
+                el.appendChild(row);
+            });
         },
         gerarFakePJ() {
             const nf=`${_pick(_SOBR)} ${_pick(_ATV)}`;
-            const data={
-                razao_social:`${nf} ${_pick(['LTDA','EIRELI','S.A.','ME'])}`,
-                nome_fantasia:nf,
-                cnpj:_gerarCNPJNum(_rand(1,99)),
-                segmento:_pick(_SEG),
-                telefone:`(${_pad(_rand(11,99),2)}) ${_pad(_rand(2000,4999),4)}-${_pad(_rand(1000,9999),4)}`,
-                email:`contato@${nf.toLowerCase().replace(/\s+/g,'')}.com.br`,
-                endereco:{logradouro:`${_pick(_LOG)} ${_pick(_RUA)}`,numero:_rand(1,9999),cidade:_pick(_CID),uf:_pick(_UF)},
-                representante:{nome:`${_pick(_NOMES)} ${_pick(_SOBR)}`,cpf:_gerarCPFNum(),cargo:_pick(['Sócio','Diretor','Presidente'])}
-            };
+            const rep=`${_pick(_NOMES)} ${_pick(_SOBR)}`;
+            const fields=[
+                {label:'Razão Social',value:`${nf} ${_pick(['LTDA','EIRELI','S.A.','ME'])}`},
+                {label:'Nome Fantasia',value:nf},
+                {label:'CNPJ',value:_gerarCNPJNum(_rand(1,99))},
+                {label:'Segmento',value:_pick(_SEG)},
+                {label:'Telefone',value:`(${_pad(_rand(11,99),2)}) ${_pad(_rand(2000,4999),4)}-${_pad(_rand(1000,9999),4)}`},
+                {label:'Email',value:`contato@${nf.toLowerCase().replace(/\s+/g,'')}.com.br`},
+                {label:'Endereço',value:`${_pick(_LOG)} ${_pick(_RUA)}, ${_rand(1,9999)} — ${_pick(_CID)}/${_pick(_UF)}`},
+                {label:'Representante',value:rep},
+                {label:'CPF Representante',value:_gerarCPFNum()},
+                {label:'Cargo',value:_pick(['Sócio','Diretor','Presidente'])}
+            ];
             const el=document.getElementById('fake_out');
-            if(el) el.textContent=JSON.stringify(data,null,2);
+            if(!el)return;
+            el.innerHTML='';
+            el.style.whiteSpace='normal';
+            fields.forEach(f=>{
+                const row=document.createElement('div');
+                row.className='fake-row';
+                row.innerHTML=`<span class="fake-label">${f.label}</span><span class="fake-value">${f.value}</span>`;
+                const btn=document.createElement('button');
+                btn.className='btn-copy-item';
+                btn.title='Copiar';
+                btn.textContent='📋';
+                btn.onclick=()=>navigator.clipboard.writeText(f.value).then(()=>{btn.textContent='✅';setTimeout(()=>btn.textContent='📋',1200);}).catch(()=>{});
+                row.appendChild(btn);
+                el.appendChild(row);
+            });
         }
     };
     Logger.info('Geradores module initialized');
