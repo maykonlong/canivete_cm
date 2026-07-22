@@ -1677,16 +1677,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (trimmed.includes('-----BEGIN CERTIFICATE-----') && !trimmed.includes('CERTIFICATE REQUEST')) {
                 return {
                     type: 'cert',
-                    suggestions: ['cert_to_text', 'cert_fingerprint_sha256', 'cert_to_json', 'extract_sans', 'extract_urls', 'extract_pubkey', 'cert_days_left', 'cert_to_fulltext', 'pem_to_der', 'cert_fingerprint_sha1', 'cert_fingerprint_md5', 'cert_to_selfsigned']
+                    suggestions: ['cert_to_text', 'cert_fingerprint_sha256', 'cert_to_json', 'extract_sans', 'extract_urls', 'extract_pubkey', 'cert_days_left', 'cert_to_fulltext', 'pem_to_der', 'cert_fingerprint_sha1', 'cert_fingerprint_md5', 'cert_to_selfsigned', 'pem_to_pfx', 'chain_concat']
                 };
             }
             // CSR
             if (trimmed.includes('CERTIFICATE REQUEST')) {
-                return { type: 'csr', suggestions: ['csr_to_text', 'extract_pubkey'] };
+                return { type: 'csr', suggestions: ['csr_to_text', 'extract_pubkey', 'generate_csr'] };
             }
             // Encrypted key
             if (trimmed.includes('ENCRYPTED') && trimmed.includes('PRIVATE KEY')) {
-                return { type: 'enc_key', suggestions: ['remove_key_pass', 'key_pkcs8_to_pkcs1', 'key_to_jwk', 'generate_csr'] };
+                return { type: 'enc_key', suggestions: ['remove_key_pass', 'key_pkcs8_to_pkcs1', 'key_to_jwk', 'generate_csr', 'pem_to_pfx', 'cert_to_selfsigned'] };
             }
             // PKCS#8 private key
             if (trimmed.includes('-----BEGIN PRIVATE KEY-----')) {
@@ -1708,7 +1708,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // JWK JSON
             if (trimmed.startsWith('{') && trimmed.includes('"kty"')) {
-                return { type: 'jwk', suggestions: ['jwk_to_pem'] };
+                return { type: 'jwk', suggestions: ['jwk_to_pem', 'key_to_jwk'] };
             }
             // Looks like PFX/P12 (base64 without PEM headers)
             if (!trimmed.includes('BEGIN') && trimmed.length > 50) {
