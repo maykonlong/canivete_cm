@@ -1,4 +1,4 @@
-key e key/**
+/**
  * Canivete Suíço Dev - Core Logic
  */
 
