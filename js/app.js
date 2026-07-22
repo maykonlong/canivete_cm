@@ -1669,7 +1669,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show/hide extra panels based on conversion type
         convertType.addEventListener('change', () => {
             const v = convertType.value;
-            const needsPass = ['remove_key_pass', 'pem_to_pfx', 'pfx_to_pem', 'pfx_to_pem_key', 'pfx_to_pem_cert', 'generate_csr', 'cert_to_selfsigned', 'generate_rsa_key'].includes(v);
+            const needsPass = ['remove_key_pass', 'pem_to_pfx', 'pfx_to_pem', 'pfx_to_cer_key', 'pfx_to_pem_only', 'pfx_to_cer_only', 'pfx_to_key_only', 'generate_csr', 'cert_to_selfsigned', 'generate_rsa_key'].includes(v);
             const needsExtra = ['pem_to_pfx'].includes(v);
             passPanel.style.display = needsPass ? 'block' : 'none';
             extraPanel.style.display = needsExtra ? 'block' : 'none';
@@ -1679,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (v === 'remove_key_pass') {
                 passPanel.querySelector('h3').textContent = 'Senha da Chave Privada';
                 passPanel.querySelector('input').placeholder = 'Digite a senha da chave';
-            } else if (v === 'pfx_to_pem' || v === 'pfx_to_pem_key' || v === 'pfx_to_pem_cert') {
+            } else if (v.startsWith('pfx_')) {
                 passPanel.querySelector('h3').textContent = 'Senha do PFX';
                 passPanel.querySelector('input').placeholder = 'Senha do arquivo PFX';
             } else if (v === 'generate_rsa_key') {
@@ -2043,8 +2043,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         break;
                     }
                     case 'pfx_to_pem':
-                    case 'pfx_to_pem_key':
-                    case 'pfx_to_pem_cert': {
+                    case 'pfx_to_cer_key':
+                    case 'pfx_to_pem_only':
+                    case 'pfx_to_cer_only':
+                    case 'pfx_to_key_only': {
                         const pfxPass = document.getElementById('convert_key_pass').value;
                         let asn1;
                         try { asn1 = forge.asn1.fromDer(forge.util.decode64(input.replace(/\s/g, ''))); } catch (_) {}
@@ -2056,22 +2058,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         const kPlain = p12.getBags({ bagType: forge.pki.oids.keyBag });
                         const key = (kShr[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0]?.key) || (kPlain[forge.pki.oids.keyBag]?.[0]?.key);
 
-                        // Use split output blocks for multi-output conversions
                         const keyBlock = document.getElementById('convert_key_block');
                         const out1Label = document.getElementById('convert_out1_label');
                         const out2Label = document.getElementById('convert_out2_label');
                         const keyOutput = document.getElementById('convert_key_output');
-
-                        // Reset key block
                         keyOutput.value = '';
                         keyBlock.style.display = 'none';
 
-                        if (type === 'pfx_to_pem') {
-                            // Show cert in block 1, key in block 2
-                            out1Label.textContent = '📜 Certificado (.cer)';
+                        const certExt = (type === 'pfx_to_cer_key' || type === 'pfx_to_cer_only') ? '.cer' : '.pem';
+                        const certLabel = certExt === '.cer' ? 'CER' : 'PEM';
+
+                        if (type === 'pfx_to_pem' || type === 'pfx_to_cer_key') {
+                            out1Label.textContent = `📜 Certificado (${certExt})`;
                             out2Label.textContent = '🔑 Chave Privada (.key)';
-                            // Set download extensions
-                            document.querySelector('#convert_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', '.cer');
+                            document.querySelector('#convert_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', certExt);
                             document.querySelector('#convert_key_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', '.key');
                             if (certs.length > 0) {
                                 output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
@@ -2082,7 +2082,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 keyOutput.value = forge.pki.privateKeyToPem(key);
                                 keyBlock.style.display = 'block';
                             }
-                        } else if (type === 'pfx_to_pem_key') {
+                            showMessage('certs_msg', `PFX → ${certLabel} + Key extraído!`);
+                        } else if (type === 'pfx_to_pem_only' || type === 'pfx_to_cer_only') {
+                            out1Label.textContent = `📜 Certificado (${certExt})`;
+                            document.querySelector('#convert_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', certExt);
+                            if (certs.length > 0) {
+                                output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
+                            } else {
+                                return showMessage('certs_msg', 'Nenhum certificado encontrado no PFX', 'error');
+                            }
+                            showMessage('certs_msg', `PFX → ${certLabel} extraído!`);
+                        } else if (type === 'pfx_to_key_only') {
                             out1Label.textContent = '🔑 Chave Privada (.key)';
                             document.querySelector('#convert_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', '.key');
                             if (key) {
@@ -2090,17 +2100,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else {
                                 return showMessage('certs_msg', 'Nenhuma chave privada encontrada no PFX', 'error');
                             }
-                        } else {
-                            out1Label.textContent = '📜 Certificado (.cer)';
-                            document.querySelector('#convert_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', '.cer');
-                            if (certs.length > 0) {
-                                output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
-                            } else {
-                                return showMessage('certs_msg', 'Nenhum certificado encontrado no PFX', 'error');
-                            }
+                            showMessage('certs_msg', 'PFX → Key extraído!');
                         }
-                        const label = type === 'pfx_to_pem' ? 'Cert + Key' : type === 'pfx_to_pem_key' ? 'Key' : 'Cert';
-                        showMessage('certs_msg', `PFX → ${label} extraído!`);
                         break;
                     }
                     case 'cert_to_selfsigned': {

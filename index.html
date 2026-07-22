@@ -1052,10 +1052,16 @@
                     <div class="panel-header"><h3>Tipo de Conversão</h3></div>
                     <div class="panel-content">
                         <select id="convert_type">
-                            <optgroup label="🔄 PFX / PKCS#12 (mais usados)">
-                                <option value="pfx_to_pem">📦➡️📄+🔑 PFX → Cert (.cer) + Key (.key)</option>
-                                <option value="pfx_to_pem_key">📦➡️🔑 PFX → Apenas Key (.key)</option>
-                                <option value="pfx_to_pem_cert">📦➡️📜 PFX → Apenas Cert (.cer)</option>
+                            <optgroup label="📦 PFX → PEM (mais usados)">
+                                <option value="pfx_to_pem">📦➡️📄+🔑 PFX → PEM + Key (.pem + .key)</option>
+                                <option value="pfx_to_pem_only">📦➡️📄 PFX → Apenas PEM (.pem)</option>
+                                <option value="pfx_to_key_only">📦➡️🔑 PFX → Apenas Key (.key)</option>
+                            </optgroup>
+                            <optgroup label="📦 PFX → CER">
+                                <option value="pfx_to_cer_key">📦➡️📄+🔑 PFX → CER + Key (.cer + .key)</option>
+                                <option value="pfx_to_cer_only">📦➡️📄 PFX → Apenas CER (.cer)</option>
+                            </optgroup>
+                            <optgroup label="📦 Empacotar">
                                 <option value="pem_to_pfx">📄+🔑➡️📦 Cert + Key → PFX (empacotar)</option>
                             </optgroup>
                             <optgroup label="📜 Certificado (conversões)">
