@@ -1050,55 +1050,10 @@
                 </div>
                 <div class="panel" style="min-height:auto;">
                     <div class="panel-header"><h3>Tipo de Conversão</h3></div>
-                    <div class="panel-content">
-                        <select id="convert_type">
-                            <optgroup label="📦 PFX → PEM (mais usados)">
-                                <option value="pfx_to_pem">📦➡️📄+🔑 PFX → PEM + Key (.pem + .key)</option>
-                                <option value="pfx_to_pem_only">📦➡️📄 PFX → Apenas PEM (.pem)</option>
-                                <option value="pfx_to_key_only">📦➡️🔑 PFX → Apenas Key (.key)</option>
-                            </optgroup>
-                            <optgroup label="📦 PFX → CER">
-                                <option value="pfx_to_cer_key">📦➡️📄+🔑 PFX → CER + Key (.cer + .key)</option>
-                                <option value="pfx_to_cer_only">📦➡️📄 PFX → Apenas CER (.cer)</option>
-                            </optgroup>
-                            <optgroup label="📦 Empacotar">
-                                <option value="pem_to_pfx">📄+🔑➡️📦 Cert + Key → PFX (empacotar)</option>
-                            </optgroup>
-                            <optgroup label="📜 Certificado (conversões)">
-                                <option value="pem_to_der">📜➡️📄 PEM → DER (.cer binário)</option>
-                                <option value="der_to_pem">📄➡️📜 DER (Base64) → PEM</option>
-                                <option value="cert_to_text">📜➡️📝 Cert → Resumo legível</option>
-                                <option value="cert_to_fulltext">📜➡️📋 Cert → Texto completo (x509 -text)</option>
-                                <option value="cert_to_json">📜➡️{} Cert → JSON estruturado</option>
-                            </optgroup>
-                            <optgroup label="🔍 Fingerprint / Hashes">
-                                <option value="cert_fingerprint_sha256">📜→ SHA-256 Fingerprint</option>
-                                <option value="cert_fingerprint_sha1">📜→ SHA-1 Fingerprint</option>
-                                <option value="cert_fingerprint_md5">📜→ MD5 Fingerprint</option>
-                            </optgroup>
-                            <optgroup label="📋 Extrair informações">
-                                <option value="extract_sans">📜→ SANs (Subject Alt Names)</option>
-                                <option value="extract_urls">📜→ URLs (CRL, OCSP, AIA)</option>
-                                <option value="extract_pubkey">📜/🔑→ Chave Pública PEM</option>
-                                <option value="cert_days_left">📜→ Dias restantes de validade</option>
-                            </optgroup>
-                            <optgroup label="🔑 Chaves (conversões)">
-                                <option value="key_pkcs1_to_pkcs8">🔑 PKCS#1 → PKCS#8</option>
-                                <option value="key_pkcs8_to_pkcs1">🔑 PKCS#8 → PKCS#1</option>
-                                <option value="remove_key_pass">🔑🔒→🔓 Remover senha da Key</option>
-                                <option value="key_to_jwk">🔑→ JWK (JSON Web Key)</option>
-                                <option value="jwk_to_pem">JWK→🔑 PEM (RSA)</option>
-                            </optgroup>
-                            <optgroup label="🆕 Gerar">
-                                <option value="generate_rsa_key">🆕 Gerar par de chaves RSA</option>
-                                <option value="generate_csr">🆕 Gerar CSR (Key + CN)</option>
-                                <option value="csr_to_text">📝 CSR → Ler informações</option>
-                                <option value="cert_to_selfsigned">🆕 Gerar cert auto-assinado (Key)</option>
-                            </optgroup>
-                            <optgroup label="🔧 Utilitários">
-                                <option value="chain_concat">🔗 Concatenar cadeia de certs</option>
-                            </optgroup>
-                        </select>
+                    <div class="panel-content" style="position:relative;">
+                        <input type="text" id="convert_type_search" placeholder="🔍 Digite para buscar (ex: pem, cer, key, pfx...)" autocomplete="off" style="margin-bottom:0;">
+                        <div id="convert_type_dropdown" class="convert-dropdown"></div>
+                        <input type="hidden" id="convert_type" value="pfx_to_pem">
                     </div>
                 </div>
                 <div class="panel" id="convert_pass_panel" style="display:none;">

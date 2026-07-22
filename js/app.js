@@ -1603,10 +1603,125 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // ===== Tab 3: Conversions (unified via select) =====
-        const convertType = document.getElementById('convert_type');
+        // ===== Tab 3: Conversions (searchable dropdown) =====
+        const convertTypeHidden = document.getElementById('convert_type');
+        const convertSearch = document.getElementById('convert_type_search');
+        const convertDropdown = document.getElementById('convert_type_dropdown');
         const passPanel = document.getElementById('convert_pass_panel');
         const extraPanel = document.getElementById('convert_extra_panel');
+
+        // Conversion options data
+        const CONV_OPTIONS = [
+            { group: '📦 PFX → PEM (mais usados)', items: [
+                { value: 'pfx_to_pem', label: '📦➡️📄+🔑 PFX → PEM + Key (.pem + .key)' },
+                { value: 'pfx_to_pem_only', label: '📦➡️📄 PFX → Apenas PEM (.pem)' },
+                { value: 'pfx_to_key_only', label: '📦➡️🔑 PFX → Apenas Key (.key)' },
+            ]},
+            { group: '📦 PFX → CER', items: [
+                { value: 'pfx_to_cer_key', label: '📦➡️📄+🔑 PFX → CER + Key (.cer + .key)' },
+                { value: 'pfx_to_cer_only', label: '📦➡️📄 PFX → Apenas CER (.cer)' },
+            ]},
+            { group: '📦 Empacotar', items: [
+                { value: 'pem_to_pfx', label: '📄+🔑➡️📦 Cert + Key → PFX (empacotar)' },
+            ]},
+            { group: '📜 Certificado (conversões)', items: [
+                { value: 'pem_to_der', label: '📜➡️📄 PEM → DER (.cer binário)' },
+                { value: 'der_to_pem', label: '📄➡️📜 DER (Base64) → PEM' },
+                { value: 'cert_to_text', label: '📜➡️📝 Cert → Resumo legível' },
+                { value: 'cert_to_fulltext', label: '📜➡️📋 Cert → Texto completo (x509 -text)' },
+                { value: 'cert_to_json', label: '📜➡️{} Cert → JSON estruturado' },
+            ]},
+            { group: '🔍 Fingerprint / Hashes', items: [
+                { value: 'cert_fingerprint_sha256', label: '📜→ SHA-256 Fingerprint' },
+                { value: 'cert_fingerprint_sha1', label: '📜→ SHA-1 Fingerprint' },
+                { value: 'cert_fingerprint_md5', label: '📜→ MD5 Fingerprint' },
+            ]},
+            { group: '📋 Extrair informações', items: [
+                { value: 'extract_sans', label: '📜→ SANs (Subject Alt Names)' },
+                { value: 'extract_urls', label: '📜→ URLs (CRL, OCSP, AIA)' },
+                { value: 'extract_pubkey', label: '📜/🔑→ Chave Pública PEM' },
+                { value: 'cert_days_left', label: '📜→ Dias restantes de validade' },
+            ]},
+            { group: '🔑 Chaves (conversões)', items: [
+                { value: 'key_pkcs1_to_pkcs8', label: '🔑 PKCS#1 → PKCS#8' },
+                { value: 'key_pkcs8_to_pkcs1', label: '🔑 PKCS#8 → PKCS#1' },
+                { value: 'remove_key_pass', label: '🔑🔒→🔓 Remover senha da Key' },
+                { value: 'key_to_jwk', label: '🔑→ JWK (JSON Web Key)' },
+                { value: 'jwk_to_pem', label: 'JWK→🔑 PEM (RSA)' },
+            ]},
+            { group: '🆕 Gerar', items: [
+                { value: 'generate_rsa_key', label: '🆕 Gerar par de chaves RSA' },
+                { value: 'generate_csr', label: '🆕 Gerar CSR (Key + CN)' },
+                { value: 'csr_to_text', label: '📝 CSR → Ler informações' },
+                { value: 'cert_to_selfsigned', label: '🆕 Gerar cert auto-assinado (Key)' },
+            ]},
+            { group: '🔧 Utilitários', items: [
+                { value: 'chain_concat', label: '🔗 Concatenar cadeia de certs' },
+            ]},
+        ];
+
+        const getConvLabel = (val) => {
+            for (const g of CONV_OPTIONS) {
+                const item = g.items.find(i => i.value === val);
+                if (item) return item.label;
+            }
+            return '';
+        };
+
+        const renderDropdown = (filter = '') => {
+            const q = filter.toLowerCase().trim();
+            let html = '';
+            let total = 0;
+            CONV_OPTIONS.forEach(group => {
+                const filtered = q ? group.items.filter(i => i.label.toLowerCase().includes(q) || i.value.toLowerCase().includes(q)) : group.items;
+                if (filtered.length === 0) return;
+                html += `<div class="convert-dropdown-group">`;
+                html += `<div class="convert-dropdown-label">${group.group}</div>`;
+                filtered.forEach(item => {
+                    const sel = item.value === convertTypeHidden.value ? ' selected' : '';
+                    html += `<div class="convert-dropdown-item${sel}" data-value="${item.value}">${item.label}</div>`;
+                    total++;
+                });
+                html += `</div>`;
+            });
+            if (total === 0) html = '<div class="convert-dropdown-empty">Nenhuma conversão encontrada</div>';
+            convertDropdown.innerHTML = html;
+            // Bind click
+            convertDropdown.querySelectorAll('.convert-dropdown-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    selectConvOption(el.dataset.value);
+                });
+            });
+        };
+
+        const selectConvOption = (val) => {
+            convertTypeHidden.value = val;
+            convertSearch.value = getConvLabel(val);
+            convertDropdown.classList.remove('open');
+            convertTypeHidden.dispatchEvent(new Event('change'));
+        };
+
+        // Init: set default label
+        convertSearch.value = getConvLabel(convertTypeHidden.value);
+
+        convertSearch.addEventListener('focus', () => {
+            renderDropdown(convertSearch.value);
+            convertDropdown.classList.add('open');
+        });
+        convertSearch.addEventListener('input', () => {
+            renderDropdown(convertSearch.value);
+            convertDropdown.classList.add('open');
+        });
+        convertSearch.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { convertDropdown.classList.remove('open'); convertSearch.blur(); }
+            if (e.key === 'Enter') { e.preventDefault(); const first = convertDropdown.querySelector('.convert-dropdown-item'); if (first) selectConvOption(first.dataset.value); }
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#cert_convert .panel-content')) convertDropdown.classList.remove('open');
+        });
+
+        // Expose convertType for compatibility with existing code
+        const convertType = { get value() { return convertTypeHidden.value; }, set value(v) { convertTypeHidden.value = v; convertSearch.value = getConvLabel(v); } };
 
         // Smart upload for conversion input — intercept binary files (PFX)
         const convertUploadBtn = document.querySelector('#cert_convert .upload-btn[data-target="convert_input"]');
@@ -1667,8 +1782,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Show/hide extra panels based on conversion type
-        convertType.addEventListener('change', () => {
-            const v = convertType.value;
+        convertTypeHidden.addEventListener('change', () => {
+            const v = convertTypeHidden.value;
             const needsPass = ['remove_key_pass', 'pem_to_pfx', 'pfx_to_pem', 'pfx_to_cer_key', 'pfx_to_pem_only', 'pfx_to_cer_only', 'pfx_to_key_only', 'generate_csr', 'cert_to_selfsigned', 'generate_rsa_key'].includes(v);
             const needsExtra = ['pem_to_pfx'].includes(v);
             passPanel.style.display = needsPass ? 'block' : 'none';
