@@ -2612,7 +2612,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Geradores Module
     // ==========================================
     const _rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-    const _randChar = (chars) => chars[_rand(0, chars.length - 1)];
     const _pad = (n, len) => String(n).padStart(len, '0');
     const _uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16); });
 
@@ -2712,23 +2711,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return row;
     }
     window.Geradores = {
-        copiar(id) {
+        copiar(text) {
+            navigator.clipboard.writeText(text).then(()=>showToast('Copiado!')).catch(()=>{});
+        },
+        copiarTudo(id) {
             const el=document.getElementById(id);
             if(!el)return;
-            navigator.clipboard.writeText(el.textContent||el.innerText).then(()=>showToast('Copiado!')).catch(()=>{});
+            const items=el.querySelectorAll('.output-value');
+            const all=Array.from(items).map(i=>i.textContent).join('\n');
+            if(!all)return;
+            navigator.clipboard.writeText(all).then(()=>showToast(items.length+' item(ns) copiados!')).catch(()=>{});
         },
         gerarCPF() {
-            const qtd=parseInt(document.getElementById('spi_cpf_qtd')?.value)||10;
+            const qtd=parseInt(document.getElementById('spi_cpf_qtd')?.value)||1;
             const fmt=document.getElementById('spi_cpf_fmt')?.value||'limpo';
             const alpha=document.getElementById('spi_cpf_alpha')?.checked;
-            const out=[];
-            for(let i=0;i<qtd;i++){
-                let cpf=_gerarCPFNum();
-                if(fmt==='mascarado') cpf=cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
-                out.push(cpf);
-            }
             const el=document.getElementById('spi_cpf_out');
-            if(el) el.textContent=out.join('\n');
+            if(!el)return;
+            el.innerHTML='';
+            for(let i=0;i<qtd;i++){
+                let cpf=alpha?_gerarCPFAlfa():_gerarCPFNum();
+                if(fmt==='mascarado') cpf=cpf.replace(/(.{3})(.{3})(.{3})(.{2})/,'$1.$2.$3-$4');
+                el.appendChild(_criarItem(cpf));
+            }
         },
         validarCPFLive() {
             const input=document.getElementById('spi_cpf_val')?.value?.trim();
@@ -2741,17 +2746,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 :`<div style="padding:0.5rem;color:var(--danger);">❌ ${r.reason}</div>`;
         },
         gerarCNPJ() {
-            const qtd=parseInt(document.getElementById('spi_cnpj_qtd')?.value)||10;
+            const qtd=parseInt(document.getElementById('spi_cnpj_qtd')?.value)||1;
             const filial=parseInt(document.getElementById('spi_cnpj_filial')?.value)||1;
             const fmt=document.getElementById('spi_cnpj_fmt')?.value||'limpo';
-            const out=[];
-            for(let i=0;i<qtd;i++){
-                let cnpj=_gerarCNPJNum(filial);
-                if(fmt==='mascarado') cnpj=cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');
-                out.push(cnpj);
-            }
+            const alpha=document.getElementById('spi_cnpj_alpha')?.checked;
             const el=document.getElementById('spi_cnpj_out');
-            if(el) el.textContent=out.join('\n');
+            if(!el)return;
+            el.innerHTML='';
+            for(let i=0;i<qtd;i++){
+                let cnpj=alpha?_gerarCNPJAlfa(filial):_gerarCNPJNum(filial);
+                if(fmt==='mascarado') cnpj=cnpj.replace(/(.{2})(.{3})(.{3})(.{4})(.{2})/,'$1.$2.$3/$4-$5');
+                el.appendChild(_criarItem(cnpj));
+            }
         },
         validarCNPJLive() {
             const input=document.getElementById('spi_cnpj_val')?.value?.trim();
@@ -2765,19 +2771,21 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         gerarPix() {
             const tipo=document.getElementById('spi_pix_tipo')?.value||'cpf';
-            const qtd=parseInt(document.getElementById('spi_pix_qtd')?.value)||5;
-            const chaves=[];
-            for(let i=0;i<qtd;i++){
-                switch(tipo){
-                    case'cpf':chaves.push(_gerarCPFNum());break;
-                    case'cnpj':chaves.push(_gerarCNPJNum(_rand(1,9999)));break;
-                    case'email':chaves.push(`teste${_rand(1000,9999)}@exemplo${_rand(1,99)}.com.br`);break;
-                    case'telefone':chaves.push(`+55${_rand(11,99)}9${_rand(10000000,99999999)}`);break;
-                    case'evp':chaves.push(_uuid());break;
-                }
-            }
+            const qtd=parseInt(document.getElementById('spi_pix_qtd')?.value)||1;
             const el=document.getElementById('spi_pix_out');
-            if(el) el.textContent=chaves.join('\n');
+            if(!el)return;
+            el.innerHTML='';
+            for(let i=0;i<qtd;i++){
+                let chave='';
+                switch(tipo){
+                    case'cpf':chave=_gerarCPFNum();break;
+                    case'cnpj':chave=_gerarCNPJNum(_rand(1,9999));break;
+                    case'email':chave=`teste${_rand(1000,9999)}@exemplo${_rand(1,99)}.com.br`;break;
+                    case'telefone':chave=`+55${_rand(11,99)}9${_rand(10000000,99999999)}`;break;
+                    case'evp':chave=_uuid();break;
+                }
+                el.appendChild(_criarItem(chave));
+            }
         },
         identificarPix() {
             const input=document.getElementById('spi_pix_id')?.value?.trim();
