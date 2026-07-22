@@ -188,7 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(a.href);
     };
 
-    // Auto-add tooltips to all toolbar buttons
+    // ===== COMPREHENSIVE AUTO-TOOLTIPS =====
+    // Toolbar buttons
     document.querySelectorAll('.btn-toolbar').forEach(btn => {
         if (!btn.title) {
             if (btn.classList.contains('upload-btn')) btn.title = 'Upload arquivo';
@@ -196,6 +197,78 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (btn.classList.contains('copy-btn')) btn.title = 'Copiar';
             else if (btn.classList.contains('clear-btn')) btn.title = 'Limpar';
         }
+    });
+
+    // Main action buttons (by ID or class)
+    const tooltipMap = {
+        'b64img_to_base64': 'Extrair código Base64 da imagem',
+        'b64img_to_img': 'Renderizar imagem a partir do Base64',
+        'txtb64_encode': 'Codificar texto para Base64',
+        'txtb64_decode': 'Decodificar Base64 para texto',
+        'url_btn_encode': 'Codificar URL (encodeURIComponent)',
+        'url_btn_decode': 'Decodificar URL (decodeURIComponent)',
+        'html_btn_encode': 'Codificar HTML entities',
+        'html_btn_decode': 'Decodificar HTML entities',
+        'jwt_btn_decode': 'Decodificar token JWT em header/payload/signature',
+        'time_to_date': 'Converter timestamp para data humana',
+        'time_to_ts': 'Converter data para timestamp Unix',
+        'qr_btn_gen': 'Gerar QR Code a partir do texto',
+        'qr_btn_read': 'Ler QR Code de uma imagem',
+        'bin_encode': 'Converter texto para código binário (0/1)',
+        'bin_decode': 'Converter código binário para texto',
+        'hex_encode': 'Converter texto para hexadecimal',
+        'hex_decode': 'Converter hexadecimal para texto',
+        'csv_to_json': 'Converter CSV para formato JSON',
+        'json_to_csv': 'Converter JSON para formato CSV',
+        'json_btn_format': 'Formatar/indentar JSON (Beautify)',
+        'json_btn_minify': 'Comprimir JSON em uma linha (Minify)',
+        'sql_btn_format': 'Formatar/indentar consulta SQL',
+        'regex_btn_test': 'Testar expressão regular contra o texto',
+        'xml_btn_format': 'Formatar/indentar XML ou HTML',
+        'xml_btn_minify': 'Comprimir XML/HTML em uma linha',
+        'cert_btn_info': 'Extrair informações do certificado ou PFX',
+        'cert_btn_pair': 'Verificar se certificado e chave são par válido',
+        'btn_convert_exec': 'Executar a conversão selecionada',
+        'btn_pfx_exec': 'Extrair conteúdo do arquivo PFX',
+        'cert_smart_upload': 'Upload inteligente: detecta .pfx/.pem/.cer/.key automaticamente',
+        'securityBadge': 'Clique para ver informações de segurança'
+    };
+    Object.entries(tooltipMap).forEach(([id, tip]) => {
+        const el = document.getElementById(id);
+        if (el && !el.title) el.title = tip;
+    });
+
+    // Clear-all buttons
+    document.querySelectorAll('.btn-clear-all').forEach(btn => {
+        if (!btn.title) btn.title = 'Limpar todos os campos desta ferramenta';
+    });
+
+    // Nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        if (!item.title) item.title = 'Abrir ' + item.textContent.trim();
+    });
+
+    // Selects
+    const selectTips = {
+        'convert_type': 'Selecione o tipo de conversão desejada',
+        'pfx_extract_type': 'Selecione o que extrair do arquivo PFX',
+        'regex_flags': 'Flags da RegEx (g=global, i=case-insensitive, m=multiline)'
+    };
+    Object.entries(selectTips).forEach(([id, tip]) => {
+        const el = document.getElementById(id);
+        if (el && !el.title) el.title = tip;
+    });
+
+    // Textarea placeholders as fallback titles
+    document.querySelectorAll('textarea[placeholder]').forEach(ta => {
+        if (!ta.title && ta.placeholder.length > 10) {
+            ta.title = ta.placeholder.substring(0, 80);
+        }
+    });
+
+    // Password inputs
+    document.querySelectorAll('input[type="password"]').forEach(inp => {
+        if (!inp.title) inp.title = inp.placeholder || 'Digite a senha';
     });
 
     // Initialize Toolbars
