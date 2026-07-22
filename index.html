@@ -1072,52 +1072,64 @@
             <div class="alert" id="xml_msg"></div>
         </section>
 
-    <!-- ═══ SPI: CPF ═══ -->
+    <!-- ═══ Geradores: CPF ═══ -->
     <section id="view_cpf" class="tool-view">
         <div class="page-header"><h1>CPF — Gerador & Validador</h1><p>Gere CPFs válidos ou valide existentes. Suporte numérico e alfanumérico.</p></div>
         <div class="panel">
-            <h3>Configuração</h3>
+            <h3>⚙️ Configuração</h3>
             <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
-                <div class="input-group" style="flex:1;min-width:120px;"><label>Quantidade</label><input type="number" id="spi_cpf_qtd" value="1" min="1" max="1000"></div>
-                <div class="input-group" style="flex:1;min-width:180px;"><label>Formato</label><select id="spi_cpf_fmt"><option value="mascarado">Com máscara</option><option value="limpo">Sem máscara</option></select></div>
-                    <div class="input-group" style="flex:0;min-width:140px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="spi_cpf_alpha"> AlfanumÃ©rico (A-Z)</label></div>
-                <div class="input-group" style="flex:1;min-width:180px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="checkbox" id="spi_cpf_alpha"> Alfanumérico</label></div>
+                <div class="input-group" style="flex:1;min-width:100px;"><label>Quantidade</label><input type="number" id="spi_cpf_qtd" value="1" min="1" max="1000"></div>
+                <div class="input-group" style="flex:1;min-width:150px;"><label>Formato</label><select id="spi_cpf_fmt"><option value="limpo">Sem máscara</option><option value="mascarado">Com máscara (000.000.000-00)</option></select></div>
+                <div class="input-group" style="flex:0;min-width:140px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="spi_cpf_alpha"> Alfanumérico (A-Z)</label></div>
             </div>
-            <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="Geradores.gerarCPF()">🎲 Gerar</button><button class="btn btn-secondary" onclick="Geradores.copiar('spi_cpf_out')">📋 Copiar</button></div>
+            <div class="flex-row" style="gap:0.5rem;margin-top:0.75rem;">
+                <button class="btn btn-primary" onclick="Geradores.gerarCPF()">🎲 Gerar CPF</button>
+                <button class="btn btn-secondary" onclick="Geradores.copiarTudo('spi_cpf_out')">📋 Copiar Todos</button>
+                <button class="btn btn-clear-all" onclick="document.getElementById('spi_cpf_out').innerHTML='Clique em Gerar.'">🗑️ Limpar</button>
+            </div>
         </div>
-        <div class="panel"><h3>Resultado</h3><div class="output" id="spi_cpf_out">Clique em Gerar.</div></div>
-        <div class="panel"><h3>Validar CPF</h3><div class="input-group"><label>CPF</label><input type="text" id="spi_cpf_val" placeholder="529.982.247-25" oninput="Geradores.validarCPFLive()"><div id="spi_cpf_val_r"></div></div></div>
+        <div class="panel"><h3>📄 Resultado</h3><div class="output output-list" id="spi_cpf_out">Clique em Gerar.</div></div>
+        <div class="panel"><h3>🔍 Validar CPF</h3><div class="input-group"><label>Digite o CPF para validar em tempo real</label><input type="text" id="spi_cpf_val" placeholder="529.982.247-25" oninput="Geradores.validarCPFLive()"><div id="spi_cpf_val_r"></div></div></div>
     </section>
 
-    <!-- ═══ SPI: CNPJ ═══ -->
+    <!-- ═══ Geradores: CNPJ ═══ -->
     <section id="view_cnpj" class="tool-view">
-        <div class="page-header"><h1>CNPJ — Gerador & Validador</h1><p>Numérico e alfanumérico (Lei 14.478/2022).</p></div>
+        <div class="page-header"><h1>CNPJ — Gerador & Validador</h1><p>Numérico e alfanumérico (Lei 14.478/2022). Filial customizável.</p></div>
         <div class="panel">
+            <h3>⚙️ Configuração</h3>
             <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
-                <div class="input-group" style="flex:1;min-width:120px;"><label>Qtd</label><input type="number" id="spi_cnpj_qtd" value="1"></div>
-                <div class="input-group" style="flex:1;min-width:120px;"><label>Filial</label><input type="number" id="spi_cnpj_filial" value="1" min="1" max="9999"></div>
-                <div class="input-group" style="flex:1;min-width:160px;"><label>Tipo</label><select id="spi_cnpj_tipo"><option value="numerico">Numérico</option><option value="alfa">Alfanumérico</option></select></div>
-                <div class="input-group" style="flex:1;min-width:160px;"><label>Formato</label><select id="spi_cnpj_fmt"><option value="mascarado">Com máscara</option><option value="limpo">Sem máscara</option></select></div>
-                    <div class="input-group" style="flex:0;min-width:140px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="spi_cnpj_alpha"> AlfanumÃ©rico (A-Z)</label></div>
+                <div class="input-group" style="flex:1;min-width:80px;"><label>Qtd</label><input type="number" id="spi_cnpj_qtd" value="1" min="1" max="1000"></div>
+                <div class="input-group" style="flex:1;min-width:80px;"><label>Filial</label><input type="number" id="spi_cnpj_filial" value="1" min="1" max="9999"></div>
+                <div class="input-group" style="flex:1;min-width:130px;"><label>Formato</label><select id="spi_cnpj_fmt"><option value="limpo">Sem máscara</option><option value="mascarado">Com máscara (00.000.000/0000-00)</option></select></div>
+                <div class="input-group" style="flex:0;min-width:140px;"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="spi_cnpj_alpha"> Alfanumérico (A-Z)</label></div>
             </div>
-            <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="Geradores.gerarCNPJ()">🎲 Gerar</button><button class="btn btn-secondary" onclick="Geradores.copiar('spi_cnpj_out')">📋 Copiar</button></div>
+            <div class="flex-row" style="gap:0.5rem;margin-top:0.75rem;">
+                <button class="btn btn-primary" onclick="Geradores.gerarCNPJ()">🎲 Gerar CNPJ</button>
+                <button class="btn btn-secondary" onclick="Geradores.copiarTudo('spi_cnpj_out')">📋 Copiar Todos</button>
+                <button class="btn btn-clear-all" onclick="document.getElementById('spi_cnpj_out').innerHTML='Clique em Gerar.'">🗑️ Limpar</button>
+            </div>
         </div>
-        <div class="panel"><h3>Resultado</h3><div class="output" id="spi_cnpj_out">Clique em Gerar.</div></div>
-        <div class="panel"><h3>Validar CNPJ</h3><div class="input-group"><label>CNPJ</label><input type="text" id="spi_cnpj_val" placeholder="11.222.333/0001-81" oninput="Geradores.validarCNPJLive()"><div id="spi_cnpj_val_r"></div></div></div>
+        <div class="panel"><h3>📄 Resultado</h3><div class="output output-list" id="spi_cnpj_out">Clique em Gerar.</div></div>
+        <div class="panel"><h3>🔍 Validar CNPJ</h3><div class="input-group"><label>Digite o CNPJ para validar em tempo real</label><input type="text" id="spi_cnpj_val" placeholder="11.222.333/0001-81" oninput="Geradores.validarCNPJLive()"><div id="spi_cnpj_val_r"></div></div></div>
     </section>
 
-    <!-- ═══ SPI: Chaves PIX ═══ -->
+    <!-- ═══ Geradores: Chaves PIX ═══ -->
     <section id="view_pix" class="tool-view">
         <div class="page-header"><h1>Chaves PIX — Gerador & Identificador</h1><p>Gere chaves PIX por tipo ou identifique o tipo automaticamente.</p></div>
         <div class="panel">
+            <h3>⚙️ Configuração</h3>
             <div class="flex-row" style="gap:1rem;flex-wrap:wrap;">
-                <div class="input-group" style="flex:1;min-width:150px;"><label>Tipo</label><select id="spi_pix_tipo"><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">Email</option><option value="telefone">Telefone</option><option value="evp">EVP (UUID)</option></select></div>
-                <div class="input-group" style="flex:1;min-width:100px;"><label>Qtd</label><input type="number" id="spi_pix_qtd" value="1"></div>
+                <div class="input-group" style="flex:1;min-width:140px;"><label>Tipo de Chave</label><select id="spi_pix_tipo"><option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">Email</option><option value="telefone">Telefone</option><option value="evp">EVP (UUID)</option></select></div>
+                <div class="input-group" style="flex:1;min-width:80px;"><label>Qtd</label><input type="number" id="spi_pix_qtd" value="1" min="1" max="100"></div>
             </div>
-            <div class="flex-row" style="gap:0.5rem;"><button class="btn btn-primary" onclick="Geradores.gerarPix()">🎲 Gerar</button><button class="btn btn-secondary" onclick="Geradores.copiar('spi_pix_out')">📋 Copiar</button></div>
+            <div class="flex-row" style="gap:0.5rem;margin-top:0.75rem;">
+                <button class="btn btn-primary" onclick="Geradores.gerarPix()">🎲 Gerar Chaves</button>
+                <button class="btn btn-secondary" onclick="Geradores.copiarTudo('spi_pix_out')">📋 Copiar Todas</button>
+                <button class="btn btn-clear-all" onclick="document.getElementById('spi_pix_out').innerHTML='Selecione o tipo e clique em Gerar.'">🗑️ Limpar</button>
+            </div>
         </div>
-        <div class="panel"><h3>Resultado</h3><div class="output" id="spi_pix_out">Selecione o tipo e clique em Gerar.</div></div>
-        <div class="panel"><h3>Identificar Tipo</h3><div class="input-group"><label>Cole a chave PIX</label><input type="text" id="spi_pix_id" oninput="Geradores.identificarPix()"><div id="spi_pix_id_r"></div></div></div>
+        <div class="panel"><h3>📄 Resultado</h3><div class="output output-list" id="spi_pix_out">Selecione o tipo e clique em Gerar.</div></div>
+        <div class="panel"><h3>🔍 Identificar Tipo de Chave</h3><div class="input-group"><label>Cole uma chave PIX para identificar o tipo</label><input type="text" id="spi_pix_id" placeholder="Cole aqui CPF, CNPJ, email, telefone ou UUID" oninput="Geradores.identificarPix()"><div id="spi_pix_id_r"></div></div></div>
     </section>
 
     <!-- ═══ SPI: ISO 20022 ═══ -->
@@ -1136,11 +1148,20 @@
         <div class="panel"><h3>XML</h3><div class="output" id="iso_out" style="white-space:pre;font-size:0.8rem;">Clique em Gerar.</div></div>
     </section>
 
-    <!-- ═══ SPI: Dados Fake ═══ -->
+    <!-- ═══ Geradores: Dados Fake ═══ -->
     <section id="view_fakedata" class="tool-view">
-        <div class="page-header"><h1>Dados Fake — Gerador para Homologação</h1><p>Dados completos de PF e PJ brasileiros.</p></div>
-        <div class="flex-row" style="gap:0.5rem;margin-bottom:1rem;"><button class="btn btn-primary" onclick="Geradores.gerarFakePF()">🎲 Pessoa Física</button><button class="btn btn-primary" onclick="Geradores.gerarFakePJ()">🎲 Pessoa Jurídica</button><button class="btn btn-secondary" onclick="Geradores.copiar('fake_out')">📋 Copiar</button></div>
-        <div class="panel"><h3>Dados Gerados</h3><div class="output" id="fake_out" style="white-space:pre;">Clique em um dos botões acima.</div></div>
+        <div class="page-header"><h1>Dados Fake — Gerador para Homologação</h1><p>Gere dados completos e realistas de Pessoa Física e Jurídica brasileira para testes.</p></div>
+        <div class="panel">
+            <h3>🎲 Gerar Dados</h3>
+            <div class="flex-row" style="gap:0.75rem;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="Geradores.gerarFakePF()" style="flex:1;min-width:180px;">👤 Pessoa Física</button>
+                <button class="btn btn-primary" onclick="Geradores.gerarFakePJ()" style="flex:1;min-width:180px;">🏢 Pessoa Jurídica</button>
+            </div>
+        </div>
+        <div class="panel">
+            <h3>📄 Dados Gerados</h3>
+            <div class="output" id="fake_out" style="white-space:pre;font-size:0.85rem;">Clique em um dos botões acima.</div>
+        </div>
     </section>
 
     <!-- ==========================================
