@@ -49,49 +49,43 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Estratégia: Network First para sw.js, Cache First para assets locais, Network First para API/proxy
+// Estratégia: Network First para arquivos críticos, Cache First para libs
 self.addEventListener('fetch', (event) => {
+    // Apenas GET requests
+    if (event.request.method !== 'GET') return;
+
     const url = new URL(event.request.url);
 
-    // Sempre buscar da rede: sw.js, index.html, style.css, app.js (permite auto-atualização)
-    const NETWORK_FIRST = ['/sw.js', '/index.html', '/css/style.css', '/js/app.js'];
-    if (NETWORK_FIRST.some(p => url.pathname.endsWith(p))) {
+    // Ignora requests de origens externas (CDNs, Google Fonts, etc)
+    if (url.origin !== self.location.origin) return;
+
+    // Network First para arquivos críticos (permite auto-atualização)
+    const criticalFiles = ['/sw.js', '/index.html', '/css/style.css', '/js/app.js'];
+    const isCritical = criticalFiles.some(p => url.pathname.endsWith(p));
+
+    if (isCritical) {
         event.respondWith(
-            fetch(event.request).then((response) => {
-                const clone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-                return response;
-            }).catch(() => caches.match(event.request))
+            fetch(event.request)
+                .then((response) => {
+                    if (response && response.ok) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+                    }
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
         );
         return;
     }
 
-    // Não cacheia requisições para API/proxy ou externas
-    if (url.pathname.startsWith('/api/') || url.origin !== self.location.origin) {
-        event.respondWith(
-            fetch(event.request).catch(() => {
-                return new Response(JSON.stringify({ ok: false, error: 'Offline' }), {
-                    status: 503,
-                    headers: { 'Content-Type': 'application/json' }
-                });
-            })
-        );
-        return;
-    }
-
-    // Cache First para assets locais
+    // Cache First para libs e outros assets locais
     event.respondWith(
         caches.match(event.request).then((cached) => {
-            if (cached) {
-                return cached;
-            }
+            if (cached) return cached;
             return fetch(event.request).then((response) => {
-                // Cacheia novos requests bem-sucedidos
-                if (response.ok && event.request.method === 'GET') {
+                if (response && response.ok) {
                     const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, clone);
-                    });
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
                 }
                 return response;
             });
