@@ -945,18 +945,18 @@
             <div class="cert-panel active" id="cert_info">
                 <div class="panel">
                     <div class="panel-header">
-                        <h3>Cole o Certificado (.cer, .crt, .pem) ou PFX (.pfx, .p12)</h3>
+                        <h3>Cole ou faça upload do Certificado / PFX</h3>
                         <div class="panel-toolbar">
-                            <button class="btn-toolbar upload-btn" data-target="cert_input"><svg><use href="#icon-upload"/></svg></button>
-                            <button class="btn-toolbar upload-btn" data-target="cert_pfx_info_input" title="Upload .pfx/.p12" id="cert_pfx_info_upload"><svg><use href="#icon-upload"/></svg> PFX</button>
+                            <button class="btn-toolbar" id="cert_smart_upload" title="Upload (.cer, .crt, .pem, .pfx, .p12, .key)"><svg><use href="#icon-upload"/></svg> Upload</button>
+                            <button class="btn-toolbar copy-btn" data-target="cert_input"><svg><use href="#icon-copy"/></svg></button>
                             <button class="btn-toolbar clear-btn" data-target="cert_input"><svg><use href="#icon-clear"/></svg></button>
                         </div>
                     </div>
-                    <div class="panel-content"><textarea id="cert_input" placeholder="-----BEGIN CERTIFICATE-----&#10;MIIDxxxxxxx...&#10;-----END CERTIFICATE-----&#10;&#10;Ou cole o PFX em Base64"></textarea></div>
+                    <div class="panel-content"><textarea id="cert_input" placeholder="Cole PEM aqui, ou use o botão Upload para .cer/.crt/.pem/.pfx/.p12/.key&#10;&#10;O upload detecta automaticamente o formato"></textarea></div>
                 </div>
                 <div class="panel" id="cert_info_pass_panel" style="display:none;">
-                    <div class="panel-header"><h3>Senha do PFX</h3></div>
-                    <div class="panel-content"><input type="password" id="cert_info_pfx_pass" placeholder="Digite a senha do arquivo PFX" style="width:100%;padding:0.5rem;"></div>
+                    <div class="panel-header"><h3>Senha</h3></div>
+                    <div class="panel-content"><input type="password" id="cert_info_pfx_pass" placeholder="Digite a senha do arquivo" style="width:100%;padding:0.5rem;"></div>
                 </div>
                 <div class="actions-center">
                     <button class="btn btn-primary" id="cert_btn_info">Extrair Informações</button>

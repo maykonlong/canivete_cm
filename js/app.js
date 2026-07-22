@@ -1299,37 +1299,60 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // PFX binary upload for Info tab
-        const pfxInfoUploadBtn = document.getElementById('cert_pfx_info_upload');
-        if (pfxInfoUploadBtn) {
-            pfxInfoUploadBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const binaryFileInput = document.getElementById('global_binary_file_input');
-                binaryFileInput.onchange = (ev) => {
-                    const file = ev.target.files[0];
+        // Smart upload: single button, auto-detects file type
+        const smartUploadBtn = document.getElementById('cert_smart_upload');
+        if (smartUploadBtn) {
+            smartUploadBtn.addEventListener('click', () => {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = '.cer,.crt,.pem,.pfx,.p12,.key,.der';
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
                     if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (rev) => {
-                        const b64 = rev.target.result.split(',')[1];
-                        document.getElementById('cert_input').value = b64;
-                        document.getElementById('cert_info_pass_panel').style.display = 'block';
-                        showMessage('certs_msg', `PFX "${file.name}" carregado (${(file.size / 1024).toFixed(1)} KB). Digite a senha e clique Extrair.`);
-                    };
-                    reader.readAsDataURL(file);
-                    binaryFileInput.value = '';
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    const isBinary = ['pfx', 'p12', 'der', 'cer'].includes(ext);
+                    const passPanel = document.getElementById('cert_info_pass_panel');
+
+                    if (isBinary) {
+                        // Read as base64 for binary formats
+                        const reader = new FileReader();
+                        reader.onload = (rev) => {
+                            const b64 = rev.target.result.split(',')[1];
+                            document.getElementById('cert_input').value = b64;
+                            passPanel.style.display = 'block';
+                            showMessage('certs_msg', `"${file.name}" carregado (${(file.size / 1024).toFixed(1)} KB). Digite a senha e clique Extrair.`);
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        // Read as text for PEM formats
+                        const reader = new FileReader();
+                        reader.onload = (rev) => {
+                            const text = rev.target.result;
+                            document.getElementById('cert_input').value = text;
+                            // Show password only if encrypted key or looks like PFX
+                            if (text.includes('ENCRYPTED') || (!text.includes('BEGIN CERTIFICATE') && !text.includes('BEGIN PRIVATE KEY'))) {
+                                passPanel.style.display = 'block';
+                            } else {
+                                passPanel.style.display = 'none';
+                            }
+                            showMessage('certs_msg', `"${file.name}" carregado.`);
+                        };
+                        reader.readAsText(file);
+                    }
                 };
-                binaryFileInput.click();
-            }, true);
+                fileInput.click();
+            });
         }
 
-        // Auto-detect PFX content in cert_input and show password field
+        // Auto-detect content type when pasting
         document.getElementById('cert_input').addEventListener('input', () => {
             const val = document.getElementById('cert_input').value.trim();
             const passPanel = document.getElementById('cert_info_pass_panel');
-            // Show password if content looks like PFX (base64 without PEM headers)
-            if (val && !val.includes('BEGIN CERTIFICATE') && !val.includes('BEGIN PRIVATE KEY')) {
-                try { forge.asn1.fromDer(forge.util.decode64(val)); passPanel.style.display = 'block'; } catch (_) {}
+            if (!val) { passPanel.style.display = 'none'; return; }
+            // Show password for encrypted keys or PFX (base64 without PEM headers)
+            if (val.includes('ENCRYPTED')) { passPanel.style.display = 'block'; return; }
+            if (!val.includes('BEGIN CERTIFICATE') && !val.includes('BEGIN PRIVATE KEY') && !val.includes('BEGIN RSA')) {
+                try { forge.asn1.fromDer(forge.util.decode64(val)); passPanel.style.display = 'block'; } catch (_) { passPanel.style.display = 'none'; }
             } else {
                 passPanel.style.display = 'none';
             }
