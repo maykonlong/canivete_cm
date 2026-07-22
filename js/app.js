@@ -1,4 +1,4 @@
-/**
+key/**
  * Canivete Suíço Dev - Core Logic
  */
 
@@ -139,6 +139,23 @@ document.addEventListener('DOMContentLoaded', () => {
             toastEl.classList.remove('show');
             toastEl.hidden = true;
         }, 2200);
+    };
+
+    // Modal error popup (with OK button — must be dismissed)
+    const showErrorModal = (message) => {
+        const modal = document.getElementById('errorModal');
+        const text = document.getElementById('errorModalText');
+        const okBtn = document.getElementById('errorModalOk');
+        if (!modal || !text || !okBtn) { alert(message); return; }
+        text.textContent = message;
+        modal.hidden = false;
+        okBtn.focus();
+        const close = () => { modal.hidden = true; okBtn.removeEventListener('click', close); modal.removeEventListener('click', closeBg); };
+        const closeBg = (e) => { if (e.target === modal) close(); };
+        okBtn.addEventListener('click', close);
+        modal.addEventListener('click', closeBg);
+        const onKey = (e) => { if (e.key === 'Enter' || e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); } };
+        document.addEventListener('keydown', onKey);
     };
 
     const showMessage = (elementId, message, type = 'success') => {
@@ -2140,7 +2157,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 Logger.error('Erro na conversão', { error: e.message });
                 const msg = e.message || '';
                 if (msg.includes('password') || msg.includes('Password') || msg.includes('MAC') || msg.includes('mac') || msg.includes('invalid')) {
-                    showMessage('certs_msg', '❌ Senha incorreta ou PFX corrompido. Verifique a senha e tente novamente.', 'error');
+                    showErrorModal('Senha incorreta ou PFX corrompido.\n\nVerifique a senha digitada e tente novamente.');
+                    showMessage('certs_msg', '❌ Senha incorreta ou PFX corrompido', 'error');
                 } else {
                     showMessage('certs_msg', 'Erro: ' + msg, 'error');
                 }
@@ -2244,7 +2262,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 showMessage('certs_msg', 'Extração concluída!');
             } catch (e) {
                 Logger.error('Erro ao extrair PFX', { error: e.message });
-                showMessage('certs_msg', 'Erro: ' + e.message + (e.message.includes('password') ? ' — Verifique a senha.' : ''), 'error');
+                if (e.message.includes('password')) {
+                    showErrorModal('Senha incorreta ou PFX corrompido.\n\nVerifique a senha digitada e tente novamente.');
+                    showMessage('certs_msg', '❌ Senha incorreta', 'error');
+                } else {
+                    showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+                }
             }
         });
 
