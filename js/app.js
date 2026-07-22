@@ -1299,57 +1299,119 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // PFX binary upload for Info tab
+        const pfxInfoUploadBtn = document.getElementById('cert_pfx_info_upload');
+        if (pfxInfoUploadBtn) {
+            pfxInfoUploadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const binaryFileInput = document.getElementById('global_binary_file_input');
+                binaryFileInput.onchange = (ev) => {
+                    const file = ev.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (rev) => {
+                        const b64 = rev.target.result.split(',')[1];
+                        document.getElementById('cert_input').value = b64;
+                        document.getElementById('cert_info_pass_panel').style.display = 'block';
+                        showMessage('certs_msg', `PFX "${file.name}" carregado (${(file.size / 1024).toFixed(1)} KB). Digite a senha e clique Extrair.`);
+                    };
+                    reader.readAsDataURL(file);
+                    binaryFileInput.value = '';
+                };
+                binaryFileInput.click();
+            }, true);
+        }
+
+        // Auto-detect PFX content in cert_input and show password field
+        document.getElementById('cert_input').addEventListener('input', () => {
+            const val = document.getElementById('cert_input').value.trim();
+            const passPanel = document.getElementById('cert_info_pass_panel');
+            // Show password if content looks like PFX (base64 without PEM headers)
+            if (val && !val.includes('BEGIN CERTIFICATE') && !val.includes('BEGIN PRIVATE KEY')) {
+                try { forge.asn1.fromDer(forge.util.decode64(val)); passPanel.style.display = 'block'; } catch (_) {}
+            } else {
+                passPanel.style.display = 'none';
+            }
+        });
+
         // ===== Tab 1: Certificate Info =====
         document.getElementById('cert_btn_info').addEventListener('click', async () => {
-            const pem = document.getElementById('cert_input').value.trim();
-            if (!pem) return showMessage('certs_msg', 'Cole o certificado primeiro', 'error');
-            if (!pem.includes('BEGIN CERTIFICATE')) return showMessage('certs_msg', 'Formato inválido. Cole em formato PEM.', 'error');
+            const raw = document.getElementById('cert_input').value.trim();
+            if (!raw) return showMessage('certs_msg', 'Cole o certificado ou PFX primeiro', 'error');
 
+            // Try PEM first
+            if (raw.includes('BEGIN CERTIFICATE')) {
+                try {
+                    const cert = forge.pki.certificateFromPem(raw);
+                    const issuer = cert.issuer.getField('CN') ? cert.issuer.getField('CN').value : 'N/A';
+                    const subject = cert.subject.getField('CN') ? cert.subject.getField('CN').value : 'N/A';
+                    const serial = cert.serialNumber;
+                    const notBefore = cert.validity.notBefore.toLocaleString('pt-BR');
+                    const notAfter = cert.validity.notAfter.toLocaleString('pt-BR');
+                    const now = new Date();
+                    const isExpired = now > cert.validity.notAfter;
+                    const daysLeft = Math.ceil((cert.validity.notAfter - now) / (1000 * 60 * 60 * 24));
+                    const derBytes = forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes();
+                    const fingerprint = forge.md.sha256.create().update(derBytes).digest().toHex();
+                    const pubKeyDer = extractSpkiDer(raw, false);
+                    const pubKeyHash = pubKeyDer ? getPublicKeyHash(pubKeyDer) : 'N/A';
+                    const modulusHex = cert.publicKey.n.toString(16);
+                    const modulusMd5 = forge.md.md5.create().update(modulusHex).digest().toHex();
+                    let output = `═══════════════════════════════════════════\n  INFORMAÇÕES DO CERTIFICADO\n═══════════════════════════════════════════\n\n`;
+                    output += `Subject (CN): ${subject}\nIssuer (CN):  ${issuer}\nSerial:       ${serial}\n\n`;
+                    output += `Válido De:    ${notBefore}\nVálido Até:   ${notAfter}\n`;
+                    output += `Status:       ${isExpired ? '❌ EXPIRADO' : '✅ Válido'} (${isExpired ? 'vencido há ' + Math.abs(daysLeft) : daysLeft + ' dias restantes'})\n\n`;
+                    output += `SHA-256 Fingerprint:\n  ${fingerprint}\n\nPublic Key SHA-256:\n  ${pubKeyHash}\n\n`;
+                    output += `Modulus (MD5):\n  ${modulusMd5}\n`;
+                    document.getElementById('cert_info_output').textContent = output;
+                    showMessage('certs_msg', 'Informações extraídas com sucesso!');
+                } catch (e) {
+                    Logger.error('Erro ao analisar certificado', { error: e.message });
+                    showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+                }
+                return;
+            }
+
+            // Try PFX
             try {
-                const cert = forge.pki.certificateFromPem(pem);
-                const issuer = cert.issuer.getField('CN') ? cert.issuer.getField('CN').value : 'N/A';
-                const subject = cert.subject.getField('CN') ? cert.subject.getField('CN').value : 'N/A';
-                const serial = cert.serialNumber;
-                const notBefore = cert.validity.notBefore.toLocaleString('pt-BR');
-                const notAfter = cert.validity.notAfter.toLocaleString('pt-BR');
-                const now = new Date();
-                const isExpired = now > cert.validity.notAfter;
-                const daysLeft = Math.ceil((cert.validity.notAfter - now) / (1000 * 60 * 60 * 24));
+                const pfxPass = document.getElementById('cert_info_pfx_pass').value;
+                const asn1 = forge.asn1.fromDer(forge.util.decode64(raw.replace(/\s/g, '')));
+                const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, pfxPass);
+                const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
+                const certs = certBags[forge.pki.oids.certBag] || [];
+                if (certs.length === 0) return showMessage('certs_msg', 'Nenhum certificado encontrado no PFX', 'error');
 
-                // SHA256 fingerprint (via forge)
-                const derBytes = forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes();
-                const fingerprint = forge.md.sha256.create().update(derBytes).digest().toHex();
+                let output = `═══════════════════════════════════════════\n  INFORMAÇÕES DO PFX/PKCS#12\n═══════════════════════════════════════════\n\n`;
+                output += `Certificados encontrados: ${certs.length}\n\n`;
 
-                // Public key info
-                const pubKeyDer = extractSpkiDer(pem, false);
-                const pubKeyHash = pubKeyDer ? getPublicKeyHash(pubKeyDer) : 'N/A';
+                certs.forEach((bag, i) => {
+                    const cert = bag.cert;
+                    const subject = cert.subject.getField('CN')?.value || 'N/A';
+                    const issuer = cert.issuer.getField('CN')?.value || 'N/A';
+                    const serial = cert.serialNumber;
+                    const notBefore = cert.validity.notBefore.toLocaleString('pt-BR');
+                    const notAfter = cert.validity.notAfter.toLocaleString('pt-BR');
+                    const now = new Date();
+                    const isExpired = now > cert.validity.notAfter;
+                    const daysLeft = Math.ceil((cert.validity.notAfter - now) / (1000 * 60 * 60 * 24));
+                    const derBytes = forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes();
+                    const fingerprint = forge.md.sha256.create().update(derBytes).digest().toHex();
 
-                // Modulus (MD5 via forge — WebCrypto doesn't support MD5)
-                const pubKey = cert.publicKey;
-                const modulusHex = pubKey.n.toString(16);
-                const modulusMd5 = forge.md.md5.create().update(modulusHex).digest().toHex();
-
-                let output = `═══════════════════════════════════════════\n`;
-                output += `  INFORMAÇÕES DO CERTIFICADO\n`;
-                output += `═══════════════════════════════════════════\n\n`;
-                output += `Subject (CN): ${subject}\n`;
-                output += `Issuer (CN):  ${issuer}\n`;
-                output += `Serial:       ${serial}\n\n`;
-                output += `Válido De:    ${notBefore}\n`;
-                output += `Válido Até:   ${notAfter}\n`;
-                output += `Status:       ${isExpired ? '❌ EXPIRADO' : '✅ Válido'} (${isExpired ? 'vencido há ' + Math.abs(daysLeft) : daysLeft + ' dias restantes'})\n\n`;
-                output += `SHA-256 Fingerprint:\n  ${fingerprint}\n\n`;
-                output += `Public Key SHA-256:\n  ${pubKeyHash}\n\n`;
-                output += `Modulus (MD5, compatível com openssl x509 -modulus | md5sum):\n  ${modulusMd5}\n`;
+                    output += `── Certificado ${i + 1} ──\n`;
+                    output += `Subject (CN): ${subject}\nIssuer (CN):  ${issuer}\nSerial:       ${serial}\n`;
+                    output += `Válido De:    ${notBefore}\nVálido Até:   ${notAfter}\n`;
+                    output += `Status:       ${isExpired ? '❌ EXPIRADO' : '✅ Válido'} (${isExpired ? 'vencido há ' + Math.abs(daysLeft) : daysLeft + ' dias restantes'})\n`;
+                    output += `SHA-256:      ${fingerprint}\n\n`;
+                });
 
                 document.getElementById('cert_info_output').textContent = output;
-                // Mirror to hidden textarea for copy/download toolbar
-                document.getElementById('cert_info_output').dataset.text = output;
-                showMessage('certs_msg', 'Informações extraídas com sucesso!');
+                showMessage('certs_msg', 'Informações do PFX extraídas!');
             } catch (e) {
-                Logger.error('Erro ao analisar certificado', { error: e.message });
-                showMessage('certs_msg', 'Erro: ' + e.message, 'error');
+                Logger.error('Erro ao analisar PFX/certificado', { error: e.message });
+                showMessage('certs_msg', 'Erro: ' + e.message + (e.message.includes('password') ? ' — Verifique a senha.' : ''), 'error');
             }
+            return;
         });
 
         // ===== Tab 2: Validate Pair =====
