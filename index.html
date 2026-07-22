@@ -1104,16 +1104,29 @@
                 <div class="actions-center">
                     <button class="btn btn-primary" id="btn_convert_exec" style="width:100%;max-width:400px;">Executar Conversão</button>
                 </div>
-                <div class="panel">
-                    <div class="panel-header">
-                        <h3>Resultado</h3>
-                        <div class="panel-toolbar">
-                            <button class="btn-toolbar copy-btn" data-target="convert_output"><svg><use href="#icon-copy"/></svg></button>
-                            <button class="btn-toolbar download-btn" data-target="convert_output"><svg><use href="#icon-download"/></svg></button>
-                            <button class="btn-toolbar clear-btn" data-target="convert_output"><svg><use href="#icon-clear"/></svg></button>
+                <div id="convert_result_blocks">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 id="convert_out1_label">Resultado</h3>
+                            <div class="panel-toolbar">
+                                <button class="btn-toolbar copy-btn" data-target="convert_output"><svg><use href="#icon-copy"/></svg></button>
+                                <button class="btn-toolbar download-btn" data-target="convert_output" data-ext=".pem"><svg><use href="#icon-download"/></svg></button>
+                                <button class="btn-toolbar clear-btn" data-target="convert_output"><svg><use href="#icon-clear"/></svg></button>
+                            </div>
                         </div>
+                        <div class="panel-content"><textarea id="convert_output" readonly placeholder="Resultado da conversão..."></textarea></div>
                     </div>
-                    <div class="panel-content"><textarea id="convert_output" readonly placeholder="Resultado da conversão..."></textarea></div>
+                    <div class="panel" id="convert_key_block" style="display:none;">
+                        <div class="panel-header">
+                            <h3 id="convert_out2_label">Chave Privada</h3>
+                            <div class="panel-toolbar">
+                                <button class="btn-toolbar copy-btn" data-target="convert_key_output"><svg><use href="#icon-copy"/></svg></button>
+                                <button class="btn-toolbar download-btn" data-target="convert_key_output" data-ext=".key"><svg><use href="#icon-download"/></svg></button>
+                                <button class="btn-toolbar clear-btn" data-target="convert_key_output"><svg><use href="#icon-clear"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="panel-content"><textarea id="convert_key_output" readonly placeholder="Chave privada..."></textarea></div>
+                    </div>
                 </div>
             </div>
 

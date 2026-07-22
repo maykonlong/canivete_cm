@@ -309,10 +309,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetEl.dispatchEvent(new Event('cleared'));
             }
 
-            // DOWNLOAD
+            // DOWNLOAD — with smart file extension
             if(btn.classList.contains('download-btn')) {
                 if(targetEl.tagName === 'IMG' || (targetEl.tagName === 'DIV' && targetEl.querySelector('canvas'))) {
-                    // Image download handled inside specific tools, but let's try generic
                     const src = targetEl.tagName === 'IMG' ? targetEl.src : targetEl.querySelector('canvas')?.toDataURL('image/png');
                     if(!src) return;
                     const a = document.createElement('a');
@@ -321,7 +320,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     a.click();
                 } else {
                     if(!targetEl.value) return;
-                    downloadContent(targetEl.value, `${targetId}_${Date.now()}.txt`);
+                    // Smart extension based on data-ext attribute or content detection
+                    let ext = btn.getAttribute('data-ext') || '.txt';
+                    if (ext === '.txt') {
+                        const val = targetEl.value;
+                        if (val.includes('BEGIN CERTIFICATE')) ext = '.pem';
+                        else if (val.includes('BEGIN PRIVATE KEY') || val.includes('BEGIN RSA PRIVATE KEY')) ext = '.key';
+                        else if (val.includes('BEGIN CERTIFICATE REQUEST')) ext = '.csr';
+                        else if (val.startsWith('{')) ext = '.json';
+                        else if (val.startsWith('-----BEGIN')) ext = '.pem';
+                        else if (val.startsWith('MIID') || val.startsWith('MII')) ext = '.pem';
+                    }
+                    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                    downloadContent(targetEl.value, `${targetId}_${ts}${ext}`);
                 }
             }
 
@@ -2027,19 +2038,45 @@ document.addEventListener('DOMContentLoaded', () => {
                         const kShr = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
                         const kPlain = p12.getBags({ bagType: forge.pki.oids.keyBag });
                         const key = (kShr[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0]?.key) || (kPlain[forge.pki.oids.keyBag]?.[0]?.key);
-                        let pem = '';
-                        if (type === 'pfx_to_pem' || type === 'pfx_to_pem_key') {
-                            if (key) pem += forge.pki.privateKeyToPem(key) + '\n';
-                            else return showMessage('certs_msg', 'Nenhuma chave privada encontrada no PFX', 'error');
-                        }
-                        if (type === 'pfx_to_pem' || type === 'pfx_to_pem_cert') {
+
+                        // Use split output blocks for multi-output conversions
+                        const keyBlock = document.getElementById('convert_key_block');
+                        const out1Label = document.getElementById('convert_out1_label');
+                        const out2Label = document.getElementById('convert_out2_label');
+                        const keyOutput = document.getElementById('convert_key_output');
+
+                        // Reset key block
+                        keyOutput.value = '';
+                        keyBlock.style.display = 'none';
+
+                        if (type === 'pfx_to_pem') {
+                            // Show cert in block 1, key in block 2
+                            out1Label.textContent = '📜 Certificado (PEM)';
+                            out2Label.textContent = '🔑 Chave Privada (PEM)';
                             if (certs.length > 0) {
-                                certs.forEach(b => { pem += forge.pki.certificateToPem(b.cert) + '\n'; });
-                            } else if (type === 'pfx_to_pem_cert') {
+                                output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
+                            } else {
+                                output.value = '# Nenhum certificado encontrado no PFX';
+                            }
+                            if (key) {
+                                keyOutput.value = forge.pki.privateKeyToPem(key);
+                                keyBlock.style.display = 'block';
+                            }
+                        } else if (type === 'pfx_to_pem_key') {
+                            out1Label.textContent = '🔑 Chave Privada (PEM)';
+                            if (key) {
+                                output.value = forge.pki.privateKeyToPem(key);
+                            } else {
+                                return showMessage('certs_msg', 'Nenhuma chave privada encontrada no PFX', 'error');
+                            }
+                        } else {
+                            out1Label.textContent = '📜 Certificado (PEM)';
+                            if (certs.length > 0) {
+                                output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
+                            } else {
                                 return showMessage('certs_msg', 'Nenhum certificado encontrado no PFX', 'error');
                             }
                         }
-                        output.value = pem || 'Nenhum dado extraído.';
                         const label = type === 'pfx_to_pem' ? 'Cert + Key' : type === 'pfx_to_pem_key' ? 'Key' : 'Cert';
                         showMessage('certs_msg', `PFX → ${label} extraído!`);
                         break;
