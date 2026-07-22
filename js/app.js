@@ -1,4 +1,4 @@
-key/**
+key e key/**
  * Canivete Suíço Dev - Core Logic
  */
 
@@ -2068,8 +2068,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (type === 'pfx_to_pem') {
                             // Show cert in block 1, key in block 2
-                            out1Label.textContent = '📜 Certificado (.pem)';
+                            out1Label.textContent = '📜 Certificado (.cer)';
                             out2Label.textContent = '🔑 Chave Privada (.key)';
+                            // Set download extensions
+                            document.querySelector('#convert_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', '.cer');
+                            document.querySelector('#convert_key_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', '.key');
                             if (certs.length > 0) {
                                 output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
                             } else {
@@ -2081,13 +2084,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         } else if (type === 'pfx_to_pem_key') {
                             out1Label.textContent = '🔑 Chave Privada (.key)';
+                            document.querySelector('#convert_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', '.key');
                             if (key) {
                                 output.value = forge.pki.privateKeyToPem(key);
                             } else {
                                 return showMessage('certs_msg', 'Nenhuma chave privada encontrada no PFX', 'error');
                             }
                         } else {
-                            out1Label.textContent = '📜 Certificado (.pem)';
+                            out1Label.textContent = '📜 Certificado (.cer)';
+                            document.querySelector('#convert_output')?.closest('.panel')?.querySelector('.download-btn')?.setAttribute('data-ext', '.cer');
                             if (certs.length > 0) {
                                 output.value = certs.map(b => forge.pki.certificateToPem(b.cert)).join('\n');
                             } else {
