@@ -105,22 +105,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // switchView function (global, used by Command Palette)
+    window.switchView = function(targetId) {
+        navItems.forEach(nav => nav.classList.remove('active'));
+        toolViews.forEach(view => view.classList.remove('active'));
+        const targetView = document.getElementById(targetId);
+        if (targetView) targetView.classList.add('active');
+        const navItem = document.querySelector(`.nav-item[data-target="${targetId}"]`);
+        if (navItem) navItem.classList.add('active');
+        if (mainTitle) mainTitle.textContent = navItem ? navItem.textContent.trim() : targetId;
+        // Update breadcrumb
+        const bcCurrent = document.getElementById('breadcrumbCurrent');
+        if (bcCurrent) bcCurrent.textContent = navItem ? navItem.textContent.trim() : targetId;
+        try { localStorage.setItem('devtools_last_tool', targetId); } catch (_) {}
+        if (isMobileNav()) closeSidebar();
+    };
+
     navItems.forEach(item => {
         if(item.classList.contains('nav-category')) return;
         
         item.addEventListener('click', (e) => {
             e.preventDefault();
-            navItems.forEach(nav => nav.classList.remove('active'));
-            toolViews.forEach(view => view.classList.remove('active'));
-            
-            item.classList.add('active');
             const targetId = item.getAttribute('data-target');
-            const targetView = document.getElementById(targetId);
-            if (targetView) targetView.classList.add('active');
-            
-            if (mainTitle) mainTitle.textContent = item.textContent.trim();
-            try { localStorage.setItem('devtools_last_tool', targetId); } catch (_) {}
-            if (isMobileNav()) closeSidebar();
+            switchView(targetId);
         });
     });
 
@@ -2537,4 +2544,72 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set initially active view's title
     const activeNav = document.querySelector('.nav-item.active');
     if (activeNav && mainTitle) mainTitle.textContent = activeNav.textContent.trim();
+
+    // ==========================================
+    // Command Palette (Ctrl+K)
+    // ==========================================
+    window.openCmdPalette = function() {
+        const overlay = document.getElementById('cmdPalette');
+        if (!overlay) return;
+        overlay.classList.add('open');
+        const input = document.getElementById('cmdInput');
+        if (input) { input.value = ''; setTimeout(() => input.focus(), 50); }
+        // Reset all items visible
+        document.querySelectorAll('#cmdResults .cmd-item').forEach(i => i.style.display = '');
+    };
+
+    window.closeCmdPalette = function() {
+        const overlay = document.getElementById('cmdPalette');
+        if (overlay) overlay.classList.remove('open');
+    };
+
+    // Cmd palette filter
+    const cmdInput = document.getElementById('cmdInput');
+    if (cmdInput) {
+        cmdInput.addEventListener('input', () => {
+            const q = cmdInput.value.toLowerCase();
+            document.querySelectorAll('#cmdResults .cmd-item').forEach(item => {
+                const label = item.querySelector('.cmd-label')?.textContent?.toLowerCase() || '';
+                const hint = item.querySelector('.cmd-hint')?.textContent?.toLowerCase() || '';
+                item.style.display = (label.includes(q) || hint.includes(q)) ? '' : 'none';
+            });
+        });
+        cmdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeCmdPalette();
+        });
+    }
+
+    // Click outside to close
+    const cmdOverlay = document.getElementById('cmdPalette');
+    if (cmdOverlay) {
+        cmdOverlay.addEventListener('click', (e) => { if (e.target === cmdOverlay) closeCmdPalette(); });
+    }
+
+    // Ctrl+K shortcut
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const overlay = document.getElementById('cmdPalette');
+            if (overlay?.classList.contains('open')) closeCmdPalette();
+            else openCmdPalette();
+        }
+    });
+
+    // ==========================================
+    // Theme Toggle (global)
+    // ==========================================
+    window.toggleTheme = function() {
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        try { localStorage.setItem('devtools_theme', next); } catch (_) {}
+        // Update all theme toggle buttons
+        const icon = next === 'dark' ? '🌙' : '☀️';
+        document.querySelectorAll('#themeToggle, #themeToggleHeader').forEach(btn => {
+            if (btn) btn.textContent = icon;
+        });
+    };
+
+    Logger.info('Command Palette + Theme Toggle initialized');
 });
