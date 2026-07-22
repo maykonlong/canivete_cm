@@ -89,8 +89,21 @@
         </div>
         <p id="navSearchEmpty" class="nav-search-empty" hidden>Nenhuma ferramenta encontrada.</p>
         <nav class="sidebar-nav" id="sidebarNav">
-            <div class="nav-category">Codificação</div>
-            <a href="#" class="nav-item active" data-target="view_base64_img">
+            <div class="nav-group">
+                <div class="nav-group-label">Principal</div>
+                <a href="#" class="nav-item active" data-target="view_dashboard">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item" data-target="view_history">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Histórico
+                </a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-label">Codificação</div>
+                <a href="#" class="nav-item" data-target="view_base64_img">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 Base64 ↔ Imagem
             </a>
@@ -163,7 +176,10 @@
                 CSV ↔ JSON
             </a>
 
-            <div class="nav-category">Formatadores & Validadores</div>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-label">Formatadores & Validadores</div>
             <a href="#" class="nav-item" data-target="view_json">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                 JSON Formatter
@@ -180,19 +196,99 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                 XML / HTML Beautifier
             </a>
+            </div>
         </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar">CS</div>
+                <div class="user-info">
+                    <div class="user-name">Canivete Dev</div>
+                    <div class="user-role">v3.1 — 100% Local</div>
+                </div>
+            </div>
+        </div>
     </aside>
 
     <main class="main-content">
-        <div class="tool-header">
-            <h1 id="mainTitle">Base64 ↔ Imagem</h1>
-        </div>
-        
         <input type="file" id="global_file_input" style="display:none;">
-    <input type="file" id="global_binary_file_input" accept=".pfx,.p12,.cer,.crt,.der,.pem,.key" style="display:none;">
+        <input type="file" id="global_binary_file_input" accept=".pfx,.p12,.cer,.crt,.der,.pem,.key" style="display:none;">
+
+        <!-- ═══ DASHBOARD VIEW ═══ -->
+        <section id="view_dashboard" class="tool-view active">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <p>Suas ferramentas de desenvolvimento em um só lugar. 100% client-side, zero telemetria.</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-label">Ferramentas</span><div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div></div>
+                    <div class="stat-value">19</div>
+                    <span class="stat-change up">Todas client-side</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-label">Segurança</span><div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div></div>
+                    <div class="stat-value">100%</div>
+                    <span class="stat-change up">Zero telemetria</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-label">Certificados SSL</span><div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div></div>
+                    <div class="stat-value">30+</div>
+                    <span class="stat-change up">Conversões disponíveis</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header"><span class="stat-label">PWA Ready</span><div class="stat-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/></svg></div></div>
+                    <div class="stat-value">v3.1</div>
+                    <span class="stat-change up">Service Worker ativo</span>
+                </div>
+            </div>
+            <div class="tools-section">
+                <div class="section-header">
+                    <h2>Ferramentas Populares</h2>
+                </div>
+                <div class="tools-grid">
+                    <div class="tool-card" onclick="switchView('view_certs')">
+                        <div class="tool-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+                        <h3>Certificados SSL</h3>
+                        <p>Analise, converta e extraia certificados PFX, PEM, CER. Detecção inteligente de formato.</p>
+                        <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                    <div class="tool-card" onclick="switchView('view_jwt')">
+                        <div class="tool-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                        <h3>JWT Decode</h3>
+                        <p>Decodifique tokens JWT em header, payload e signature com formatação JSON.</p>
+                        <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                    <div class="tool-card" onclick="switchView('view_qr')">
+                        <div class="tool-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></div>
+                        <h3>QR Code</h3>
+                        <p>Gere e leia QR Codes. Suporte a cores, gradientes e binarização automática.</p>
+                        <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                    <div class="tool-card" onclick="switchView('view_hash')">
+                        <div class="tool-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+                        <h3>Gerador de Hash</h3>
+                        <p>SHA-1, SHA-256 e SHA-512 em tempo real. Hashes criptográficos do seu texto.</p>
+                        <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                    <div class="tool-card" onclick="switchView('view_json')">
+                        <div class="tool-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+                        <h3>JSON Formatter</h3>
+                        <p>Formate, valide e comprima JSON. Beautify e Minify com um clique.</p>
+                        <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                    <div class="tool-card" onclick="switchView('view_text_base64')">
+                        <div class="tool-icon pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/></svg></div>
+                        <h3>Texto ↔ Base64</h3>
+                        <p>Codifique e decodifique texto em Base64 com suporte a UTF-8 completo.</p>
+                        <svg class="tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- TOOL: Base64 ↔ Image -->
-        <section id="view_base64_img" class="tool-view active">
+        <section id="view_base64_img" class="tool-view">
             <div class="split-view">
                 <div class="panel">
                     <div class="panel-header">
