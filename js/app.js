@@ -1668,23 +1668,99 @@ document.addEventListener('DOMContentLoaded', () => {
             return '';
         };
 
+        // Smart content detection
+        const detectContentType = (raw) => {
+            if (!raw || raw.length < 5) return { type: 'unknown', suggestions: [] };
+            const trimmed = raw.trim();
+
+            // PEM Certificate
+            if (trimmed.includes('-----BEGIN CERTIFICATE-----') && !trimmed.includes('CERTIFICATE REQUEST')) {
+                return {
+                    type: 'cert',
+                    suggestions: ['cert_to_text', 'cert_fingerprint_sha256', 'cert_to_json', 'extract_sans', 'extract_urls', 'extract_pubkey', 'cert_days_left', 'cert_to_fulltext', 'pem_to_der', 'cert_fingerprint_sha1', 'cert_fingerprint_md5', 'cert_to_selfsigned']
+                };
+            }
+            // CSR
+            if (trimmed.includes('CERTIFICATE REQUEST')) {
+                return { type: 'csr', suggestions: ['csr_to_text', 'extract_pubkey'] };
+            }
+            // Encrypted key
+            if (trimmed.includes('ENCRYPTED') && trimmed.includes('PRIVATE KEY')) {
+                return { type: 'enc_key', suggestions: ['remove_key_pass', 'key_pkcs8_to_pkcs1', 'key_to_jwk', 'generate_csr'] };
+            }
+            // PKCS#8 private key
+            if (trimmed.includes('-----BEGIN PRIVATE KEY-----')) {
+                return {
+                    type: 'key_pkcs8',
+                    suggestions: ['key_pkcs8_to_pkcs1', 'extract_pubkey', 'key_to_jwk', 'remove_key_pass', 'generate_csr', 'cert_to_selfsigned', 'pem_to_pfx']
+                };
+            }
+            // PKCS#1 private key
+            if (trimmed.includes('RSA PRIVATE KEY')) {
+                return {
+                    type: 'key_pkcs1',
+                    suggestions: ['key_pkcs1_to_pkcs8', 'extract_pubkey', 'key_to_jwk', 'remove_key_pass', 'generate_csr', 'cert_to_selfsigned', 'pem_to_pfx']
+                };
+            }
+            // Public key
+            if (trimmed.includes('-----BEGIN PUBLIC KEY-----')) {
+                return { type: 'pubkey', suggestions: ['extract_pubkey', 'key_to_jwk'] };
+            }
+            // JWK JSON
+            if (trimmed.startsWith('{') && trimmed.includes('"kty"')) {
+                return { type: 'jwk', suggestions: ['jwk_to_pem'] };
+            }
+            // Looks like PFX/P12 (base64 without PEM headers)
+            if (!trimmed.includes('BEGIN') && trimmed.length > 50) {
+                try {
+                    forge.asn1.fromDer(forge.util.decode64(trimmed));
+                    return {
+                        type: 'pfx',
+                        suggestions: ['pfx_to_pem', 'pfx_to_cer_key', 'pfx_to_key_only', 'pfx_to_pem_only', 'pfx_to_cer_only']
+                    };
+                } catch (_) {}
+            }
+            return { type: 'unknown', suggestions: [] };
+        };
+
         const renderDropdown = (filter = '') => {
             const q = filter.toLowerCase().trim();
+            const inputVal = document.getElementById('convert_input').value.trim();
+            const detection = detectContentType(inputVal);
             let html = '';
             let total = 0;
+
+            // If no filter and content detected, show suggestions first
+            if (!q && detection.suggestions.length > 0) {
+                html += `<div class="convert-dropdown-group">`;
+                html += `<div class="convert-dropdown-label">⭐ Sugestões (${detection.type === 'pfx' ? 'PFX detectado' : detection.type === 'cert' ? 'Cert detectado' : detection.type === 'key_pkcs8' ? 'Chave PKCS#8' : detection.type === 'key_pkcs1' ? 'Chave PKCS#1' : detection.type === 'csr' ? 'CSR detectado' : detection.type === 'jwk' ? 'JWK detectado' : detection.type === 'enc_key' ? 'Chave encriptada' : detection.type === 'pubkey' ? 'Chave pública' : 'Detectado'})</div>`;
+                detection.suggestions.forEach(val => {
+                    const label = getConvLabel(val);
+                    if (!label) return;
+                    const sel = val === convertTypeHidden.value ? ' selected' : '';
+                    html += `<div class="convert-dropdown-item suggested${sel}" data-value="${val}">${label}</div>`;
+                    total++;
+                });
+                html += `</div>`;
+                html += `<div class="convert-dropdown-divider"></div>`;
+            }
+
+            // All options (filtered or not)
             CONV_OPTIONS.forEach(group => {
                 const filtered = q ? group.items.filter(i => i.label.toLowerCase().includes(q) || i.value.toLowerCase().includes(q)) : group.items;
                 if (filtered.length === 0) return;
                 html += `<div class="convert-dropdown-group">`;
                 html += `<div class="convert-dropdown-label">${group.group}</div>`;
                 filtered.forEach(item => {
+                    // Skip if already in suggestions (when no filter)
+                    if (!q && detection.suggestions.includes(item.value)) return;
                     const sel = item.value === convertTypeHidden.value ? ' selected' : '';
                     html += `<div class="convert-dropdown-item${sel}" data-value="${item.value}">${item.label}</div>`;
                     total++;
                 });
                 html += `</div>`;
             });
-            if (total === 0) html = '<div class="convert-dropdown-empty">Nenhuma conversão encontrada</div>';
+            if (total === 0 && detection.suggestions.length === 0) html = '<div class="convert-dropdown-empty">Nenhuma conversão encontrada</div>';
             convertDropdown.innerHTML = html;
             // Bind click
             convertDropdown.querySelectorAll('.convert-dropdown-item').forEach(el => {
@@ -1701,8 +1777,9 @@ document.addEventListener('DOMContentLoaded', () => {
             convertTypeHidden.dispatchEvent(new Event('change'));
         };
 
-        // Init: set default label
-        convertSearch.value = getConvLabel(convertTypeHidden.value);
+        // Init: search starts EMPTY
+        convertSearch.value = '';
+        convertSearch.placeholder = '🔍 Digite para buscar (ex: pem, cer, key, pfx...)';
 
         convertSearch.addEventListener('focus', () => {
             renderDropdown(convertSearch.value);
